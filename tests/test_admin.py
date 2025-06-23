@@ -15,4 +15,4 @@ def test_admin_can_view_all_projects(client):
 
 def test_admin_can_view_all_bookings(client):
     response = client.get('/admin/bookings')
-    assert response.status_code == 200 or response.status_code = 201
+    assert response.status_code == 200 or response.status_code == 201
