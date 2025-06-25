@@ -12,7 +12,6 @@ def login_buyer(email, password):
         return jsonify({'status': 'failure', 'message': 'Invalid credentials'}), 401
 
     session['buyer_id'] = buyer['id']
-    session['role'] = 'buyer'
 
     return jsonify({'status': 'success', 'buyer_id': buyer['id']}), 200
 
@@ -27,7 +26,6 @@ def register_buyer(name, emirates_id, phone_number, email, password):
 
     if buyer_id is not None:
         session['buyer_id'] = buyer_id
-        session['role'] = 'buyer'
     else:
         return jsonify({'status': 'failure', 'message': 'Registration failed'}), 401
 
