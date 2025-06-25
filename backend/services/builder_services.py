@@ -8,7 +8,9 @@ from backend.db.queries import (
     fetch_units_by_project,
     fetch_dashboard_data,
     match_transaction_to_booking,
-    fetch_transactions_by_builder
+    fetch_transactions_by_builder,
+    fetch_bookings_by_builder_id,
+    fetch_project_by_id
 )
 
 
@@ -103,3 +105,14 @@ def get_builder_transactions(builder_id):
     """Service to get all transactions for a given builder."""
     transactions = fetch_transactions_by_builder(builder_id)
     return jsonify({'status': 'success', 'transactions': transactions}), 200
+
+
+def get_builder_bookings(builder_id):
+    bookings = fetch_bookings_by_builder_id(builder_id)
+    return jsonify({'status': 'success', 'bookings': bookings}), 200
+
+def get_project_details(project_id):
+    project = fetch_project_by_id(project_id)
+    if project:
+        return jsonify({'status': 'success', 'project': project}), 200
+    return jsonify({'status': 'failure', 'message': 'Project not found'}), 404

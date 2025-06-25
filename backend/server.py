@@ -17,11 +17,14 @@ load_dotenv()
 # Create the Flask app
 app = Flask(__name__)
 
+# Set the security level of the browser
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+
 # Set the secret key
 app.secret_key = os.getenv('SECRET_KEY')
 
 # Enable the backend app to process cross-platform requests
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}}, supports_credentials=True)
 
 # Register blueprints to allow better structuring of the routes
 app.register_blueprint(auth_blueprint, url_prefix='/auth')

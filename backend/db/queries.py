@@ -406,3 +406,42 @@ def match_transaction_to_booking(transaction_id, booking_id):
     finally:
         cursor.close()
         conn.close()
+
+# Add these two new functions to queries.py
+
+def fetch_bookings_by_builder_id(builder_id):
+    """Fetches all bookings related to a specific builder's projects."""
+    conn = get_connection()
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            SELECT b.*, u.unit_id as unit_code, byr.name as buyer_name
+            FROM Booking b
+            JOIN Unit u ON b.unit_id = u.id
+            JOIN Project p ON u.project_id = p.id
+            JOIN Buyer byr ON b.buyer_id = byr.id
+            WHERE p.builder_id = ?
+        """, (builder_id,))
+        rows = cursor.fetchall()
+        return [dict(row) for row in rows]
+    except Exception:
+        return []
+    finally:
+        cursor.close()
+        conn.close()
+
+def fetch_project_by_id(project_id):
+    """Fetches a single project by its ID."""
+    conn = get_connection()
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT * FROM Project WHERE id = ?", (project_id,))
+        row = cursor.fetchone()
+        return dict(row) if row else None
+    except Exception:
+        return None
+    finally:
+        cursor.close()
+        conn.close()
