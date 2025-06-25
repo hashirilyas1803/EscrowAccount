@@ -4,6 +4,9 @@ import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
 
+/**
+ * Registration page for new Buyer users.
+ */
 export default function BuyerRegisterPage() {
     const [formData, setFormData] = useState({
         name: '',
@@ -35,32 +38,32 @@ export default function BuyerRegisterPage() {
     };
 
     return (
-         <div className="flex flex-col items-center justify-center">
-            <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-md">
+         <div className="flex flex-col items-center justify-center pt-10">
+            <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-lg">
                 <h2 className="text-2xl font-bold text-center mb-6">Register as Buyer</h2>
                 {error && <p className="text-red-500 text-center mb-4">{error}</p>}
                 <form onSubmit={handleRegister}>
                     <div className="mb-4">
-                        <label className="block text-gray-700">Full Name</label>
-                        <input type="text" name="name" onChange={handleChange} required className="w-full px-3 py-2 border rounded-lg" />
+                        <label className="block text-gray-700 font-semibold">Full Name</label>
+                        <input type="text" name="name" onChange={handleChange} required className="w-full px-3 py-2 mt-1 border rounded-lg" />
                     </div>
                      <div className="mb-4">
-                        <label className="block text-gray-700">Email</label>
-                        <input type="email" name="email" onChange={handleChange} required className="w-full px-3 py-2 border rounded-lg" />
+                        <label className="block text-gray-700 font-semibold">Email</label>
+                        <input type="email" name="email" onChange={handleChange} required className="w-full px-3 py-2 mt-1 border rounded-lg" />
                     </div>
                      <div className="mb-4">
-                        <label className="block text-gray-700">Phone Number</label>
-                        <input type="tel" name="phone_number" onChange={handleChange} required className="w-full px-3 py-2 border rounded-lg" />
+                        <label className="block text-gray-700 font-semibold">Phone Number</label>
+                        <input type="tel" name="phone_number" onChange={handleChange} required className="w-full px-3 py-2 mt-1 border rounded-lg" />
                     </div>
                      <div className="mb-4">
-                        <label className="block text-gray-700">Emirates ID (15 digits)</label>
-                        <input type="text" name="emirates_id" onChange={handleChange} required className="w-full px-3 py-2 border rounded-lg" />
+                        <label className="block text-gray-700 font-semibold">Emirates ID (15 digits)</label>
+                        <input type="text" name="emirates_id" onChange={handleChange} required className="w-full px-3 py-2 mt-1 border rounded-lg" />
                     </div>
                      <div className="mb-6">
-                        <label className="block text-gray-700">Password</label>
-                        <input type="password" name="password" onChange={handleChange} required className="w-full px-3 py-2 border rounded-lg" />
+                        <label className="block text-gray-700 font-semibold">Password</label>
+                        <input type="password" name="password" onChange={handleChange} required className="w-full px-3 py-2 mt-1 border rounded-lg" />
                     </div>
-                    <button type="submit" className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700">
+                    <button type="submit" className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 font-semibold transition-colors">
                         Register
                     </button>
                 </form>

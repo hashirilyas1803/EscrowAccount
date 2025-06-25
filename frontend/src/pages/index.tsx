@@ -2,6 +2,11 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/context/AuthContext';
 
+/**
+ * The main entry point of the site.
+ * It acts as a router: directs logged-in users to their dashboard
+ * and new users to the login page.
+ */
 export default function HomePage() {
   const { isLoggedIn } = useAuth();
   const router = useRouter();
@@ -14,5 +19,5 @@ export default function HomePage() {
     }
   }, [isLoggedIn, router]);
 
-  return <div>Loading...</div>;
+  return <div className="text-center p-10">Loading...</div>;
 }

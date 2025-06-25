@@ -1,5 +1,6 @@
 import { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 
+// Defines the shape of the user object and authentication state.
 interface AuthState {
   isLoggedIn: boolean;
   user: {
@@ -8,33 +9,42 @@ interface AuthState {
   } | null;
 }
 
+// Defines the context type, including state and actions.
 interface AuthContextType extends AuthState {
-  login: (userData: any, role: 'user' | 'buyer') => void;
+  login: (userData: any, roleType: 'user' | 'buyer') => void;
   logout: () => void;
   checkLoginStatus: () => void;
 }
 
+// Create the context with an initial undefined value.
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/**
+ * Provides authentication state and actions to its children.
+ * Manages user data in sessionStorage to persist across page reloads.
+ */
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [auth, setAuth] = useState<AuthState>({
     isLoggedIn: false,
     user: null,
   });
 
+  // Checks sessionStorage on initial load to restore login state.
   const checkLoginStatus = () => {
-    const user = sessionStorage.getItem('user');
-    if (user) {
-      setAuth({ isLoggedIn: true, user: JSON.parse(user) });
+    const storedUser = sessionStorage.getItem('user');
+    if (storedUser) {
+      setAuth({ isLoggedIn: true, user: JSON.parse(storedUser) });
     } else {
       setAuth({ isLoggedIn: false, user: null });
     }
   };
 
+  // Run checkLoginStatus once when the component mounts.
   useEffect(() => {
     checkLoginStatus();
   }, []);
 
+  // Sets user data in state and sessionStorage upon successful login.
   const login = (userData: any, type: 'user' | 'buyer') => {
     const userToStore = type === 'user' 
       ? { id: userData.user_id, role: userData.role }
@@ -44,6 +54,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setAuth({ isLoggedIn: true, user: userToStore });
   };
 
+  // Clears user data from state and sessionStorage upon logout.
   const logout = () => {
     sessionStorage.removeItem('user');
     setAuth({ isLoggedIn: false, user: null });
@@ -56,6 +67,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+/**
+ * Custom hook for easy access to the authentication context.
+ */
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {

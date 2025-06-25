@@ -1,3 +1,12 @@
+/*
+  These are the core Tailwind CSS directives.
+  They inject the base styles, component classes, and utility classes
+  into the application's global stylesheet.
+*/
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+body {
+  background-color: #f9fafb;
+}
