@@ -1,3 +1,5 @@
+// File: frontend/src/components/dashboards/BuilderDashboard.tsx
+// (This is the complete version from my previous answer that removes all placeholders)
 import { useState, useEffect, ReactNode } from 'react';
 import api from '@/lib/api';
 
@@ -136,7 +138,7 @@ const BuilderDashboard = () => {
 
     return (
         <div className="space-y-8">
-            {/* METRICS SECTION - No change */}
+            {/* METRICS SECTION */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="bg-white p-6 rounded-lg shadow text-center"><p className="text-gray-600 text-sm">Total Projects</p><p className="text-3xl font-bold">{metrics?.total_projects || 0}</p></div>
                 <div className="bg-white p-6 rounded-lg shadow text-center"><p className="text-gray-600 text-sm">Total Units</p><p className="text-3xl font-bold">{metrics?.total_units || 0}</p></div>
@@ -201,7 +203,7 @@ const BuilderDashboard = () => {
                         <select value={selectedBookingId} onChange={e => setSelectedBookingId(e.target.value)} className="w-full mt-1 px-3 py-2 border rounded bg-white" required>
                             <option value="" disabled>-- Please select a booking --</option>
                             {bookings.map(b => (
-                                <option key={b.id} value={b.id}>Booking for {b.buyer_name} (Unit: {b.unit_code})</option>
+                                <option key={b.id} value={b.id.toString()}>Booking for {b.buyer_name} (Unit: {b.unit_code})</option>
                             ))}
                         </select>
                     </div>

@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify, session
+from backend.services.admin_services import get_all_projects
 from backend.services.buyer_services import (
     create_booking_service,
     get_my_bookings,
@@ -59,3 +60,15 @@ def create_transaction():
         date,
         payment_method
     )
+
+@buyer_blueprint.route('/projects', methods=['GET'])
+def list_all_available_projects():
+    """
+    An endpoint for a logged-in buyer to view all projects from all builders.
+    """
+    # This check ensures only logged-in buyers can access this data.
+    if 'buyer_id' not in session:
+        return jsonify({'status': 'failure', 'message': 'Authentication required'}), 401
+    
+    # Reuse the service function that gets all projects and returns them as JSON.
+    return get_all_projects()
