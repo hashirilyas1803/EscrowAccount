@@ -7,7 +7,8 @@ from backend.db.queries import (
     fetch_projects_by_builder,
     fetch_units_by_project,
     fetch_dashboard_data,
-    match_transaction_to_booking
+    match_transaction_to_booking,
+    fetch_transactions_by_builder
 )
 
 
@@ -96,3 +97,9 @@ def match_transaction(transaction_id, booking_id):
     else:
         # This can happen if the transaction_id does not exist or if there's a DB error.
         return jsonify({'status': 'failure', 'message': 'Could not match transaction. Invalid ID or database error.'}), 404
+
+
+def get_builder_transactions(builder_id):
+    """Service to get all transactions for a given builder."""
+    transactions = fetch_transactions_by_builder(builder_id)
+    return jsonify({'status': 'success', 'transactions': transactions}), 200

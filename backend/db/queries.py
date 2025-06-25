@@ -262,6 +262,36 @@ def fetch_all_transactions():
         cursor.close()
         conn.close()
 
+# Add this function to the end of queries.py
+def fetch_transactions_by_builder(builder_id):
+    """Fetches all transactions linked to a specific builder's projects."""
+    conn = get_connection()
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    try:
+        # This query finds transactions where the associated booking is for a unit
+        # within a project owned by the specified builder.
+        cursor.execute("""
+            SELECT 
+                t.*,
+                b.id as booking_id_val,
+                u.unit_id as unit_code,
+                buy.name as buyer_name
+            FROM Transaction_log t
+            JOIN Booking b ON t.booking_id = b.id
+            JOIN Unit u ON b.unit_id = u.id
+            JOIN Project p ON u.project_id = p.id
+            JOIN Buyer buy ON b.buyer_id = buy.id
+            WHERE p.builder_id = ?
+        """, (builder_id,))
+        rows = cursor.fetchall()
+        return [dict(row) for row in rows]
+    except Exception:
+        return []
+    finally:
+        cursor.close()
+        conn.close()
+
 # ---------- Dashboard ----------
 def fetch_dashboard_data(builder_id):
     """Fetches aggregated dashboard data for a builder, returned as a dictionary."""
