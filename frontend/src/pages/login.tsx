@@ -1,15 +1,16 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
+import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
 
-  const [email, setEmail] = useState('');
+  const [email, setEmail]     = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<'builder'|'buyer'|'admin'>('builder');
-  const [error, setError] = useState<string|null>(null);
+  const [role, setRole]       = useState<'builder'|'buyer'|'admin'>('builder');
+  const [error, setError]     = useState<string|null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,6 +73,13 @@ export default function LoginPage() {
         >
           Login
         </button>
+
+        <p className="text-center text-sm mt-4">
+          Don’t have an account?{' '}
+          <Link href="/register" className="text-indigo-600 hover:underline">
+            Register here
+          </Link>
+        </p>
       </form>
     </div>
   );

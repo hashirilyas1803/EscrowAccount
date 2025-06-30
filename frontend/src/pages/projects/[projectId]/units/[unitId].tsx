@@ -1,4 +1,3 @@
-// src/pages/projects/[projectId]/units/[unitId].tsx
 import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
 import ProtectedRoute from '@/components/ProtectedRoute'
@@ -8,7 +7,7 @@ import api from '@/lib/api'
 interface Booking {
   id: number
   unit_id: number
-  buyerName: string
+  buyer_name: string
   amount: number
   method: string
   date: string
@@ -27,54 +26,71 @@ interface Unit {
   floor: number
   area: number
   price: number
+  builder_name: string
+}
+
+function getPrefix(role: string) {
+  if (role === 'admin')   return '/admin/projects'
+  if (role === 'builder') return '/builder/projects'
+  return '/buyer/projects'
 }
 
 export default function UnitDetail() {
   const router = useRouter()
   const { projectId, unitId } = router.query as {
     projectId?: string
-    unitId?: string
+    unitId?:    string
   }
   const { user } = useAuth()
 
-  const [unit, setUnit]           = useState<Unit | null>(null)
-  const [booking, setBooking]     = useState<Booking | null>(null)
-  const [txs, setTxs]             = useState<Tx[]>([])
-  const [status, setStatus]       = useState<'Available'|'Unpaid'|'Paid'>('Available')
+  const prefix = getPrefix(user?.role ?? '')
+
+  const [unit,    setUnit]    = useState<Unit   | null>(null)
+  const [booking,setBooking]  = useState<Booking| null>(null)
+  const [txs,     setTxs]     = useState<Tx     []>([])
+  const [status,  setStatus]  = useState<'Available'|'Unpaid'|'Paid'>('Available')
 
   useEffect(() => {
     if (!projectId || !unitId) return
 
     // 1) load this unit
-    api.get(`/builder/projects/${projectId}/units`)
+    api.get(`${prefix}/${projectId}/units`)
       .then(res => {
-        const found = (res.data.units as Unit[]).find(u => u.id === Number(unitId))
+        const found = (res.data.units as Unit[])
+          .find(u => u.id === Number(unitId))
         setUnit(found || null)
       })
       .catch(console.error)
 
-    // 2) load buyer’s bookings, filter by this unit_id
-    api.get('/buyer/bookings')
+    // 2) load bookings (admin sees all, others see own)
+    const bookingsEndpoint = user?.role === 'admin'
+      ? '/admin/bookings'
+      : '/buyer/bookings'
+
+    api.get(bookingsEndpoint)
       .then(res => {
         const b = (res.data.bookings as Booking[]).find(
-          (b) => b.unit_id === Number(unitId)
+          b => b.unit_id === Number(unitId)
         )
         setBooking(b || null)
       })
       .catch(() => setBooking(null))
 
-    // 3) load builder’s transactions once
-    api.get('/builder/transactions')
+    // 3) load transactions (admin sees all, builder sees own)
+    const txEndpoint = user?.role === 'admin'
+      ? '/admin/transactions'
+      : '/builder/transactions'
+
+    api.get(txEndpoint)
       .then(res => setTxs(res.data.transactions as Tx[]))
       .catch(console.error)
-  }, [projectId, unitId])
+  }, [projectId, unitId, user?.role, prefix])
 
-  // 4) whenever booking or txs change, recompute status
+  // 4) recompute status when booking or txs change
   useEffect(() => {
     if (!booking) {
       setStatus('Available')
     } else {
-      // look for a transaction that has booking_id === booking.id
       const paid = txs.some(t => t.booking_id === booking.id)
       setStatus(paid ? 'Paid' : 'Unpaid')
     }
@@ -83,8 +99,8 @@ export default function UnitDetail() {
   if (!unit) return <p>Loading…</p>
 
   return (
-    <ProtectedRoute roles={['builder','buyer','admin']}>
-      <div className="space-y-6">
+    <ProtectedRoute roles={['admin','builder','buyer']}>
+      <div className="space-y-6 p-6">
         <h1 className="text-2xl font-bold">
           Unit {unit.number}{' '}
           <span className={
@@ -98,22 +114,21 @@ export default function UnitDetail() {
           </span>
         </h1>
 
-        <p>Floor: {unit.floor}</p>
-        <p>Area: {unit.area} sqft</p>
-        <p>Price: ${unit.price}</p>
-
-        <p>
-          <strong>Builder:</strong>{' '}
-          {user?.role === 'builder'
-            ? user.name
-            : '—'}
-        </p>
+        <div className="space-y-1">
+          <p><strong>Floor:</strong> {unit.floor}</p>
+          <p><strong>Area:</strong> {unit.area} sqft</p>
+          <p><strong>Price:</strong> ${unit.price}</p>
+          <p>
+            <strong>Builder:</strong>{' '}
+            {unit.builder_name}
+          </p>
+        </div>
 
         {booking && (
           <div className="bg-green-50 p-4 rounded space-y-1">
             <h2 className="font-semibold">Booking Details</h2>
             <p><strong>ID:</strong> {booking.id}</p>
-            <p><strong>Buyer:</strong> {booking.buyerName}</p>
+            <p><strong>Buyer:</strong> {booking.buyer_name}</p>
             <p><strong>Amount:</strong> ${booking.amount}</p>
             <p><strong>Method:</strong> {booking.method}</p>
             <p><strong>Date:</strong> {booking.date}</p>
@@ -122,15 +137,14 @@ export default function UnitDetail() {
 
         {/* Builder-only match button */}
         {user?.role === 'builder' && booking && status === 'Unpaid' && (
-          <MatchForm bookingId={booking.id} unitId={unit.id} />
+          <MatchForm bookingId={booking.id} />
         )}
       </div>
     </ProtectedRoute>
   )
 }
 
-// extracted match form
-function MatchForm({ bookingId, unitId }: { bookingId: number; unitId: number }) {
+function MatchForm({ bookingId }: { bookingId: number }) {
   const [txId, setTxId]       = useState<string>('')
   const [loading, setLoading] = useState(false)
 
@@ -142,7 +156,7 @@ function MatchForm({ bookingId, unitId }: { bookingId: number; unitId: number })
       booking_id: bookingId,
     })
       .then(() => window.location.reload())
-      .catch(err => alert(err.response?.data?.message||'Match failed'))
+      .catch(err => alert(err.response?.data?.message || 'Match failed'))
       .finally(() => setLoading(false))
   }
 

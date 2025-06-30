@@ -133,7 +133,7 @@ def fetch_units_by_project(project_id):
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute("SELECT * FROM Unit WHERE project_id = ?", (project_id,))
+        cursor.execute("SELECT u.*, b.name AS builder_name FROM Unit u JOIN Project p ON u.project_id = p.id LEFT JOIN User b ON b.id = p.builder_id WHERE project_id = ?", (project_id,))
         rows = cursor.fetchall()
         return [dict(row) for row in rows]
     except Exception:
@@ -203,7 +203,7 @@ def fetch_all_bookings():
     conn = get_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute("""
+        cursor.execute("""  
             SELECT Booking.*, Buyer.name AS buyer_name, Unit.unit_id AS unit_number
             FROM Booking
             JOIN Buyer ON Booking.buyer_id = Buyer.id
