@@ -1,30 +1,38 @@
-// src/pages/register.tsx
+// RegisterPage.tsx
+// Page component for user registration across roles: builder, admin, and buyer.
+// - Shows shared fields (name, email, password) and buyer-specific fields when role is 'buyer'.
+// - Calls appropriate backend endpoints: '/auth/register' for builder/admin, '/buyer/auth/register' for buyer.
+// - Handles form state, validation, loading, and error display.
+
 import { useState } from 'react'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
 import api from '@/lib/api'
 
+// Define possible user roles
 type Role = 'builder' | 'admin' | 'buyer'
 
 export default function RegisterPage() {
   const router = useRouter()
-  const [role, setRole] = useState<Role>('builder')
+  const [role, setRole] = useState<Role>('builder')   // Selected role
 
-  // Shared fields
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
+  // Shared form fields
+  const [name, setName]       = useState('')
+  const [email, setEmail]     = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState<string|null>(null)
+  const [error, setError]     = useState<string|null>(null)
 
-  // Buyer-only fields
-  const [emirates_id, setEmiratesId] = useState('')
+  // Buyer-specific fields
+  const [emirates_id, setEmiratesId]   = useState('')
   const [phone_number, setPhoneNumber] = useState('')
 
+  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
     try {
       if (role === 'buyer') {
+        // Buyer registration endpoint
         await api.post('/buyer/auth/register', {
           name,
           emirates_id,
@@ -33,7 +41,7 @@ export default function RegisterPage() {
           password,
         })
       } else {
-        // builder or admin
+        // Builder or admin registration endpoint
         await api.post('/auth/register', {
           name,
           email,
@@ -41,8 +49,10 @@ export default function RegisterPage() {
           role,
         })
       }
+      // On success, navigate to login page
       router.push('/login')
     } catch (err: any) {
+      // Display API error or fallback
       setError(err.response?.data?.message || 'Registration failed')
     }
   }
@@ -54,8 +64,10 @@ export default function RegisterPage() {
         className="bg-white p-8 rounded shadow-md w-full max-w-md space-y-4"
       >
         <h2 className="text-xl font-semibold text-center">Create Account</h2>
+        {/* Display any submission error */}
         {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
+        {/* Select role dropdown */}
         <div>
           <label className="block text-sm font-medium">Role</label>
           <select
@@ -69,6 +81,7 @@ export default function RegisterPage() {
           </select>
         </div>
 
+        {/* Full name or name field */}
         <div>
           <label className="block text-sm font-medium">
             {role === 'buyer' ? 'Full Name' : 'Name'}
@@ -82,6 +95,7 @@ export default function RegisterPage() {
           />
         </div>
 
+        {/* Buyer-specific fields appear when role === 'buyer' */}
         {role === 'buyer' && (
           <>
             <div>
@@ -107,6 +121,7 @@ export default function RegisterPage() {
           </>
         )}
 
+        {/* Email input */}
         <div>
           <label className="block text-sm font-medium">Email</label>
           <input
@@ -118,6 +133,7 @@ export default function RegisterPage() {
           />
         </div>
 
+        {/* Password input */}
         <div>
           <label className="block text-sm font-medium">Password</label>
           <input
@@ -129,6 +145,7 @@ export default function RegisterPage() {
           />
         </div>
 
+        {/* Submit button */}
         <button
           type="submit"
           className="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700"
@@ -136,6 +153,7 @@ export default function RegisterPage() {
           Create Account
         </button>
 
+        {/* Link to login page if already have an account */}
         <p className="text-center text-sm">
           Already have an account?{' '}
           <Link href="/login" className="text-indigo-600 hover:underline">

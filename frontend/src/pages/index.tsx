@@ -1,23 +1,29 @@
-import { useEffect } from 'react';
-import { useRouter } from 'next/router';
-import { useAuth } from '@/context/AuthContext';
+// HomePage.tsx
+// Root entry point for the application.
+// - Redirects authenticated users to their dashboard based on role.
+// - Redirects unauthenticated visitors to the login page.
+// - Shows a loading state while determining authentication.
 
-/**
- * The main entry point of the site.
- * It redirects logged-in users to their dashboard
- * and unauthenticated visitors to the login page.
- */
+import { useEffect } from 'react'
+import { useRouter } from 'next/router'
+import { useAuth } from '@/context/AuthContext'
+
 export default function HomePage() {
-  const { user } = useAuth();
-  const router = useRouter();
+  // Access current authentication state
+  const { user } = useAuth()
+  const router = useRouter()
 
   useEffect(() => {
+    // Once user state is known, redirect accordingly
     if (user) {
-      router.replace('/dashboard');
+      // Authenticated: go to dashboard
+      router.replace('/dashboard')
     } else {
-      router.replace('/login');
+      // Not authenticated: go to login
+      router.replace('/login')
     }
-  }, [user, router]);
+  }, [user, router])
 
-  return <div className="text-center p-10">Loading…</div>;
+  // While redirecting, display a simple loading message
+  return <div className="text-center p-10">Loading…</div>
 }

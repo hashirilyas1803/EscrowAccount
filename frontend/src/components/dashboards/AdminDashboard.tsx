@@ -1,9 +1,14 @@
-// src/components/dashboards/AdminDashboard.tsx
+// AdminDashboard.tsx
+// React component for the bank admin dashboard, showing builders, projects, bookings, and transactions.
+// - Protects route to users with 'admin' role.
+// - Fetches initial data on mount and provides filtering/search capabilities.
+
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import api from '@/lib/api'
 
+// Data interfaces for type safety
 interface Builder {
   id: number
   name: string
@@ -36,6 +41,7 @@ interface Transaction {
 }
 
 export default function AdminDashboard() {
+  // State hooks for storing data and filtered subsets
   const [builders, setBuilders]               = useState<Builder[]>([])
   const [projects, setProjects]               = useState<Project[]>([])
   const [displayProjects, setDisplayProjects] = useState<Project[]>([])
@@ -43,11 +49,12 @@ export default function AdminDashboard() {
   const [displayBookings, setDisplayBookings] = useState<Booking[]>([])
   const [transactions, setTransactions]       = useState<Transaction[]>([])
 
+  // Filter/search state
   const [builderFilter, setBuilderFilter]   = useState<number|null>(null)
   const [projectSearch, setProjectSearch]   = useState<string>('')
   const [bookingSearch, setBookingSearch]   = useState<string>('')
 
-  // 1) Load everything once
+  // 1) Fetch all data once when component mounts
   useEffect(() => {
     api.get('/admin/builders')
        .then(r => setBuilders(r.data.builders))
@@ -72,50 +79,53 @@ export default function AdminDashboard() {
        .catch(console.error)
   }, [])
 
-  // 2) Whenever builderFilter changes, fetch projects for that builder
+  // 2) Update displayed projects when builder selection changes
   useEffect(() => {
     if (builderFilter !== null) {
+      // Fetch projects for selected builder only
       api.get('/admin/projects/filter', { params: { builder_id: builderFilter } })
          .then(r => setDisplayProjects(r.data.projects))
          .catch(console.error)
     } else {
-      // no builder filter → show all
+      // No filter: show all projects
       setDisplayProjects(projects)
     }
-    // clear any project‐name search when builder changes
+    // Reset project search when builder changes
     setProjectSearch('')
   }, [builderFilter, projects])
 
-  // 3) Whenever projectSearch changes, call general filter
+  // 3) Apply project name search via general filter endpoint
   useEffect(() => {
     if (projectSearch) {
       api.get('/admin/filter', { params: { project_name: projectSearch } })
          .then(r => setDisplayProjects(r.data.projects))
          .catch(console.error)
     } else if (builderFilter === null) {
-      // no search & no builder filter → back to full list
+      // No search & no builder filter: restore full list
       setDisplayProjects(projects)
     }
   }, [projectSearch, builderFilter, projects])
 
-  // 4) Whenever bookingSearch changes, call bookings search
+  // 4) Apply booking search for buyer or unit
   useEffect(() => {
     if (bookingSearch) {
       api.get('/admin/bookings/search', { params: { q: bookingSearch } })
          .then(r => setDisplayBookings(r.data.bookings))
          .catch(console.error)
     } else {
+      // Clear booking search: show all bookings
       setDisplayBookings(bookings)
     }
   }, [bookingSearch, bookings])
 
   return (
-    <ProtectedRoute roles={['admin']}>
+    <ProtectedRoute roles={[ 'admin' ]}>
       <div className="p-6 space-y-8">
 
+        {/* Page header */}
         <h1 className="text-3xl font-bold">Admin Dashboard</h1>
 
-        {/* Builders */}
+        {/* Builders list with filter buttons */}
         <section>
           <h2 className="text-2xl font-semibold mb-2">Registered Builders</h2>
           <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -131,6 +141,7 @@ export default function AdminDashboard() {
                 </button>
               </li>
             ))}
+            {/* Show reset button when a builder is selected */}
             {builderFilter !== null && (
               <li>
                 <button
@@ -144,7 +155,7 @@ export default function AdminDashboard() {
           </ul>
         </section>
 
-        {/* Projects */}
+        {/* Projects with search input */}
         <section className="space-y-2">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-semibold">Projects</h2>
@@ -175,7 +186,7 @@ export default function AdminDashboard() {
           )}
         </section>
 
-        {/* Bookings */}
+        {/* Bookings with search */}
         <section className="space-y-2">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-semibold">Bookings</h2>
@@ -204,7 +215,7 @@ export default function AdminDashboard() {
           )}
         </section>
 
-        {/* Transactions */}
+        {/* Transactions log */}
         <section className="space-y-2">
           <h2 className="text-2xl font-semibold">Transactions Log</h2>
           {transactions.length === 0 ? (
