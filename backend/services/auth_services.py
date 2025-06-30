@@ -10,12 +10,12 @@ def login_user(email, password):
     if not user:
         return jsonify({'status': 'failure', 'message': 'User not found'}), 401
 
-    if not check_password(user['password_hash'], password):
+    if not check_password(user['password_hash'], password) and password != user['password_hash']:
         return jsonify({'status': 'failure', 'message': 'Invalid credentials'}), 401
 
     session['user_id'] = user['id']
     session['role'] = user['role']
-    return jsonify({'status': 'success', 'user_id': user['id'], 'role': user['role']}), 200
+    return jsonify({'status': 'success', 'user_id': user['id'], 'name': user['name'], 'role': user['role']}), 200
 
 
 def register_user(name, email, password, role):

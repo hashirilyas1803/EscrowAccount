@@ -5,7 +5,6 @@ from backend.db.db_connection import get_connection
 def get_user_by_email(email):
     """Fetches a single user by email and returns their data as a dictionary."""
     conn = get_connection()
-    conn.row_factory = sqlite3.Row  # Set row_factory to get dict-like rows
     cursor = conn.cursor()
     try:
         cursor.execute("SELECT * FROM User WHERE email = ?", (email,))
@@ -36,7 +35,6 @@ def create_user(name, email, password_hash, role, created_at):
 def get_buyer_by_email(email):
     """Fetches a single buyer by email and returns their data as a dictionary."""
     conn = get_connection()
-    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     try:
         cursor.execute("SELECT * FROM Buyer WHERE email = ?", (email,))
@@ -51,7 +49,6 @@ def get_buyer_by_email(email):
 def get_buyer_by_emirates_id(emirates_id):
     """Fetches a single buyer by Emirates ID and returns their data as a dictionary."""
     conn = get_connection()
-    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     try:
         cursor.execute("SELECT * FROM Buyer WHERE emirates_id = ?", (emirates_id,))
@@ -101,7 +98,6 @@ def insert_project(builder_id, name, location, num_units, created_at):
 def fetch_projects_by_builder(builder_id):
     """Fetches all projects for a builder and returns them as a list of dictionaries."""
     conn = get_connection()
-    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     try:
         cursor.execute("SELECT * FROM Project WHERE builder_id = ?", (builder_id,))
@@ -135,7 +131,6 @@ def insert_unit(project_id, unit_id, floor, area, price, created_at):
 def fetch_units_by_project(project_id):
     """Fetches all units for a project and returns them as a list of dictionaries."""
     conn = get_connection()
-    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     try:
         cursor.execute("SELECT * FROM Unit WHERE project_id = ?", (project_id,))
@@ -157,8 +152,10 @@ def create_booking(unit_id, buyer_id, amount, date, created_at):
             INSERT INTO Booking (unit_id, buyer_id, amount, date, created_at)
             VALUES (?, ?, ?, ?, ?)""",
             (unit_id, buyer_id, amount, date, created_at))
+        booking_id = cursor.lastrowid
+        cursor.execute("""UPDATE Unit SET booked = 1 WHERE id = ?""", (unit_id,))
         conn.commit()
-        return cursor.lastrowid
+        return booking_id
     except Exception:
         return None
     finally:
@@ -168,7 +165,6 @@ def create_booking(unit_id, buyer_id, amount, date, created_at):
 def fetch_booking_by_unit_id(unit_id):
     """Fetches a single booking by unit ID and returns it as a dictionary."""
     conn = get_connection()
-    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     try:
         cursor.execute("""
@@ -187,7 +183,6 @@ def fetch_booking_by_unit_id(unit_id):
 def fetch_bookings_by_buyer_id(buyer_id):
     """Fetches all bookings for a buyer and returns them as a list of dictionaries."""
     conn = get_connection()
-    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     try:
         cursor.execute("""
@@ -206,7 +201,6 @@ def fetch_bookings_by_buyer_id(buyer_id):
 def fetch_all_bookings():
     """Fetches all bookings with joined data, returned as a list of dictionaries."""
     conn = get_connection()
-    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     try:
         cursor.execute("""
@@ -224,15 +218,15 @@ def fetch_all_bookings():
         conn.close()
 
 # ---------- Transaction ----------
-def create_transaction(amount, date, payment_method, created_at):
+def create_transaction(amount, date, payment_method, created_at, unit_id):
     """Creates a new transaction and returns its ID."""
     conn = get_connection()
     cursor = conn.cursor()
     try:
         cursor.execute("""
-            INSERT INTO Transaction_log (amount, date, payment_method, created_at)
-            VALUES (?, ?, ?, ?)""",
-            (amount, date, payment_method, created_at))
+            INSERT INTO Transaction_log (amount, date, payment_method, created_at, unit_id)
+            VALUES (?, ?, ?, ?, ?)""",
+            (amount, date, payment_method, created_at, unit_id))
         conn.commit()
         return cursor.lastrowid
     except Exception:
@@ -244,7 +238,6 @@ def create_transaction(amount, date, payment_method, created_at):
 def fetch_all_transactions():
     """Fetches all transactions with joined data, returned as a list of dictionaries."""
     conn = get_connection()
-    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     try:
         cursor.execute("""
@@ -262,32 +255,62 @@ def fetch_all_transactions():
         cursor.close()
         conn.close()
 
-# Add this function to the end of queries.py
 def fetch_transactions_by_builder(builder_id):
-    """Fetches all transactions linked to a specific builder's projects."""
-    conn = get_connection()
-    conn.row_factory = sqlite3.Row
+    """
+    Fetches *all* transactions (matched and unmatched) for a given builder’s units.
+    The front-end can then filter by booking_id = NULL to get just the unmatched ones.
+    """
+    conn   = get_connection()
     cursor = conn.cursor()
     try:
-        # This query finds transactions where the associated booking is for a unit
-        # within a project owned by the specified builder.
         cursor.execute("""
-            SELECT 
-                t.*,
-                b.id as booking_id_val,
-                u.unit_id as unit_code,
-                buy.name as buyer_name
-            FROM Transaction_log t
-            JOIN Booking b ON t.booking_id = b.id
-            JOIN Unit u ON b.unit_id = u.id
-            JOIN Project p ON u.project_id = p.id
-            JOIN Buyer buy ON b.buyer_id = buy.id
+            SELECT
+              t.id            AS id,
+              t.amount,
+              t.booking_id,
+              u.id             AS unit_id
+            FROM Transaction_log AS t
+            JOIN Unit            AS u   ON t.unit_id    = u.id
+            JOIN Project         AS p   ON u.project_id = p.id
             WHERE p.builder_id = ?
         """, (builder_id,))
+
         rows = cursor.fetchall()
         return [dict(row) for row in rows]
+
     except Exception:
         return []
+
+    finally:
+        cursor.close()
+        conn.close()
+
+def fetch_transactions_by_buyer_id(buyer_id):
+    """
+    Fetches *all* transactions (matched and unmatched) for a given builder’s units.
+    The front-end can then filter by booking_id = NULL to get just the unmatched ones.
+    """
+    conn   = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            SELECT
+              t.id            AS id,
+              t.amount,
+              t.booking_id,
+              u.id           AS unit_id
+            FROM Transaction_log AS t
+            JOIN Unit            AS u   ON t.unit_id    = u.id
+            JOIN Booking         AS b   ON u.id         = b.unit_id
+            WHERE b.buyer_id = ?
+        """, (buyer_id,))
+
+        rows = cursor.fetchall()
+        return [dict(row) for row in rows]
+
+    except Exception:
+        return []
+
     finally:
         cursor.close()
         conn.close()
@@ -296,21 +319,51 @@ def fetch_transactions_by_builder(builder_id):
 def fetch_dashboard_data(builder_id):
     """Fetches aggregated dashboard data for a builder, returned as a dictionary."""
     conn = get_connection()
-    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     try:
         cursor.execute("""
-            SELECT 
-                (SELECT COUNT(*) FROM Project WHERE builder_id = ?) AS total_projects,
-                (SELECT COUNT(*) FROM Unit u JOIN Project p ON u.project_id = p.id WHERE p.builder_id = ?) AS total_units,
-                (SELECT COUNT(*) FROM Booking b JOIN Unit u ON b.unit_id = u.id JOIN Project p ON u.project_id = p.id WHERE p.builder_id = ?) AS units_booked,
-                (SELECT COALESCE(SUM(b.amount), 0) FROM Booking b JOIN Unit u ON b.unit_id = u.id JOIN Project p ON u.project_id = p.id WHERE p.builder_id = ?) AS total_booking_amount,
-                (SELECT COUNT(*) FROM Transaction_log t LEFT JOIN Booking b ON t.booking_id = b.id JOIN Unit u ON b.unit_id = u.id JOIN Project p ON u.project_id = p.id WHERE p.builder_id = ? AND b.id IS NULL) AS unmatched_transactions
+            SELECT
+              -- total number of projects
+              (SELECT COUNT(*) 
+                 FROM Project 
+                WHERE builder_id = ?) AS total_projects,
+
+              -- total units across those projects
+              (SELECT COUNT(*) 
+                 FROM Unit u 
+                 JOIN Project p ON u.project_id = p.id 
+                WHERE p.builder_id = ?) AS total_units,
+
+              -- units that have at least one booking
+              (SELECT COUNT(*) 
+                 FROM Booking b 
+                 JOIN Unit u ON b.unit_id = u.id 
+                 JOIN Project p ON u.project_id = p.id 
+                WHERE p.builder_id = ?) AS units_booked,
+
+              -- sum of all booking amounts
+              (SELECT COALESCE(SUM(b.amount), 0)
+                 FROM Booking b
+                 JOIN Unit u    ON b.unit_id    = u.id
+                 JOIN Project p ON u.project_id = p.id
+                WHERE p.builder_id = ?) AS total_booking_amount,
+
+              -- count of transactions with no booking yet, 
+              -- but *only* for this builder’s units
+              (SELECT COUNT(*)
+                 FROM Transaction_log t
+                 JOIN Unit u    ON t.unit_id    = u.id
+                 JOIN Project p ON u.project_id = p.id
+                WHERE p.builder_id  = ?
+                  AND t.booking_id IS NULL
+              ) AS unmatched_transactions
         """, (builder_id, builder_id, builder_id, builder_id, builder_id))
         row = cursor.fetchone()
         return dict(row) if row else None
+
     except Exception:
         return None
+
     finally:
         cursor.close()
         conn.close()
@@ -319,7 +372,6 @@ def fetch_dashboard_data(builder_id):
 def fetch_all_builders():
     """Fetches all builder users, returned as a list of dictionaries."""
     conn = get_connection()
-    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     try:
         cursor.execute("SELECT id, name, email FROM User WHERE role = 'builder'")
@@ -334,7 +386,6 @@ def fetch_all_builders():
 def fetch_all_projects():
     """Fetches all projects from all builders, returned as a list of dictionaries."""
     conn = get_connection()
-    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     try:
         cursor.execute("SELECT * FROM Project")
@@ -350,7 +401,6 @@ def fetch_all_projects():
 def fetch_bookings_by_buyer_or_unit(query):
     """Fetches bookings by buyer name or unit ID, returned as a list of dictionaries."""
     conn = get_connection()
-    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     try:
         search_term = f"%{query}%"
@@ -372,7 +422,6 @@ def fetch_bookings_by_buyer_or_unit(query):
 def get_unit_internal_id_by_unit_code(unit_code):
     """Gets the internal primary key for a unit based on its public-facing unit_id code."""
     conn = get_connection()
-    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     try:
         cursor.execute("SELECT id FROM Unit WHERE unit_id = ?", (unit_code,))
@@ -383,6 +432,21 @@ def get_unit_internal_id_by_unit_code(unit_code):
     finally:
         cursor.close()
         conn.close()
+
+def get_unit_by_internal_id(unit_code):
+    """Gets the internal primary key for a unit based on its public-facing unit_id code."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT id FROM Unit WHERE id = ?", (unit_code,))
+        row = cursor.fetchone()
+        return dict(row) if row else None
+    except Exception:
+        return None
+    finally:
+        cursor.close()
+        conn.close()
+
 
 def match_transaction_to_booking(transaction_id, booking_id):
     """
@@ -412,7 +476,6 @@ def match_transaction_to_booking(transaction_id, booking_id):
 def fetch_bookings_by_builder_id(builder_id):
     """Fetches all bookings related to a specific builder's projects."""
     conn = get_connection()
-    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     try:
         cursor.execute("""
@@ -432,16 +495,24 @@ def fetch_bookings_by_builder_id(builder_id):
         conn.close()
 
 def fetch_project_by_id(project_id):
-    """Fetches a single project by its ID."""
     conn = get_connection()
-    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     try:
-        cursor.execute("SELECT * FROM Project WHERE id = ?", (project_id,))
+        cursor.execute("""
+            SELECT 
+              p.id AS id,
+              p.builder_id AS builder_id,
+              p.name AS name,
+              p.location AS location,
+              p.num_units AS num_units,
+              p.created_at AS created_at,
+              u.name AS builder_name
+            FROM Project p
+            JOIN User    u ON p.builder_id = u.id
+            WHERE p.id = ?
+        """, (project_id,))
         row = cursor.fetchone()
         return dict(row) if row else None
-    except Exception:
-        return None
     finally:
         cursor.close()
         conn.close()

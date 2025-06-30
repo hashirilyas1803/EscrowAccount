@@ -1,8 +1,10 @@
 from flask import Blueprint, request, jsonify, session
 from backend.services.admin_services import get_all_projects
+from backend.services.builder_services import get_project_details, get_project_units
 from backend.services.buyer_services import (
     create_booking_service,
     get_my_bookings,
+    get_my_transactions,
     make_transaction_service
 )
 
@@ -48,8 +50,9 @@ def create_transaction():
     amount = data.get('amount')
     date = data.get('date')
     payment_method = data.get('payment_method')
+    unit_id = data.get('unit_id')
 
-    if not all([amount, date, payment_method]):
+    if not all([amount, date, payment_method, unit_id]):
         return jsonify({'status': 'failure', 'message': 'Missing required fields'}), 400
 
     if payment_method not in VALID_PAYMENT_METHOD:
@@ -58,7 +61,8 @@ def create_transaction():
     return make_transaction_service(
         amount,
         date,
-        payment_method
+        payment_method,
+        unit_id
     )
 
 @buyer_blueprint.route('/projects', methods=['GET'])
@@ -72,3 +76,24 @@ def list_all_available_projects():
     
     # Reuse the service function that gets all projects and returns them as JSON.
     return get_all_projects()
+
+@buyer_blueprint.route('/projects/<int:project_id>', methods=['GET'])
+def buyer_view_project(project_id):
+    if 'buyer_id' not in session:
+        return jsonify({'status':'failure','message':'Unauthorized'}), 403
+    # reuse service that returns {status, project: {...}}
+    return get_project_details(project_id)
+
+@buyer_blueprint.route('/projects/<int:project_id>/units', methods=['GET'])
+def buyer_list_units(project_id):
+    if 'buyer_id' not in session:
+        return jsonify({'status':'failure','message':'Unauthorized'}), 403
+    return get_project_units(project_id)
+
+@buyer_blueprint.route('/transactions', methods=['GET'])
+def list_my_transactions():
+    if 'buyer_id' not in session:
+        return jsonify({'status':'failure','message':'Unauthorized'}), 403
+
+    return get_my_transactions(session['buyer_id'])
+

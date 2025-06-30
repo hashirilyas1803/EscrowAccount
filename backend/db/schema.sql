@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS Unit (
     area REAL NOT NULL,
     price REAL NOT NULL,
     created_at TEXT NOT NULL,
+    booked INTEGER NOT NULL DEFAULT 0 CHECK (booked IN (0,1)),
     FOREIGN KEY (project_id) REFERENCES Project(id) ON DELETE CASCADE
 );
 
@@ -59,8 +60,10 @@ CREATE TABLE IF NOT EXISTS Transaction_log (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     amount REAL NOT NULL,
     date TEXT NOT NULL,
+    unit_id INTEGER NOT NULL,
     payment_method TEXT NOT NULL CHECK (payment_method IN ('cash', 'bank transfer')),
     booking_id INTEGER,
     created_at TEXT NOT NULL,
     FOREIGN KEY (booking_id) REFERENCES Booking(id) ON DELETE SET NULL
+    FOREIGN KEY (unit_id) REFERENCES Unit(id) ON DELETE CASCADE
 );

@@ -4,20 +4,20 @@ import { useAuth } from '@/context/AuthContext';
 
 /**
  * The main entry point of the site.
- * It acts as a router: directs logged-in users to their dashboard
- * and new users to the login page.
+ * It redirects logged-in users to their dashboard
+ * and unauthenticated visitors to the login page.
  */
 export default function HomePage() {
-  const { isLoggedIn } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (isLoggedIn) {
-      router.push('/dashboard');
+    if (user) {
+      router.replace('/dashboard');
     } else {
-      router.push('/login');
+      router.replace('/login');
     }
-  }, [isLoggedIn, router]);
+  }, [user, router]);
 
-  return <div className="text-center p-10">Loading...</div>;
+  return <div className="text-center p-10">Loading…</div>;
 }

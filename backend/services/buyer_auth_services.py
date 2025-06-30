@@ -13,7 +13,7 @@ def login_buyer(email, password):
 
     session['buyer_id'] = buyer['id']
 
-    return jsonify({'status': 'success', 'buyer_id': buyer['id']}), 200
+    return jsonify({'status': 'success', 'buyer_id': buyer['id'], 'name': buyer['name']}), 200
 
 def register_buyer(name, emirates_id, phone_number, email, password):
     existing_buyer = get_buyer_by_email(email)

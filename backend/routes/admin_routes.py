@@ -9,6 +9,7 @@ from backend.services.admin_services import (
     filter_bookings_by_buyer_or_unit,
     filter_projects_by_name
 )
+from backend.services.builder_services import get_project_details, get_project_units
 
 admin_blueprint = Blueprint('admin', __name__)
 
@@ -68,3 +69,15 @@ def general_filter():
         return filter_bookings_by_buyer_or_unit(buyer_name or unit_id)
 
     return jsonify([]), 200
+
+@admin_blueprint.route('/projects/<int:project_id>', methods=['GET'])
+def admin_view_project(project_id):
+    if 'user_id' not in session or session.get('role')!='admin':
+        return jsonify({'status':'failure','message':'Unauthorized'}),403
+    return get_project_details(project_id)
+
+@admin_blueprint.route('/projects/<int:project_id>/units', methods=['GET'])
+def admin_list_units(project_id):
+    if 'user_id' not in session or session.get('role')!='admin':
+        return jsonify({'status':'failure','message':'Unauthorized'}),403
+    return get_project_units(project_id)

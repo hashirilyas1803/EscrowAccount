@@ -1,117 +1,234 @@
-import { useState, useEffect } from 'react';
-import api from '@/lib/api';
+// src/components/dashboards/AdminDashboard.tsx
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import ProtectedRoute from '@/components/ProtectedRoute'
+import api from '@/lib/api'
 
-// Type definitions for data clarity.
-type Project = {
-  id: number;
-  name: string;
-  location: string;
-  num_units: number;
-};
-type Booking = {
-  id: number;
-  buyer_name: string;
-  unit_number: string;
-  amount: number;
-  date: string;
-};
-type DisplayItem = Project & Partial<Booking>;
+interface Builder {
+  id: number
+  name: string
+  email: string
+}
 
-/**
- * The main dashboard view for the Admin user, providing an overview
- * and filtering capabilities for all platform data.
- */
-const AdminDashboard = () => {
-    const [projects, setProjects] = useState<Project[]>([]);
-    const [filteredData, setFilteredData] = useState<DisplayItem[] | null>(null);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [filterType, setFilterType] = useState('project_name');
-    const [isLoading, setIsLoading] = useState(true);
+interface Project {
+  id: number
+  name: string
+  location: string
+}
 
-    // Fetch initial data on component mount.
-    useEffect(() => {
-        api.get('/admin/projects').then(res => {
-            setProjects(res.data.projects);
-            setIsLoading(false);
-        }).catch(err => {
-            console.error("Failed to fetch projects", err);
-            setIsLoading(false);
-        });
-    }, []);
+interface Booking {
+  id: number
+  project_name: string
+  unit_number: string
+  buyer_name: string
+  amount: number
+  date: string
+}
 
-    // Handles the search form submission.
-    const handleSearch = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!searchTerm.trim()) {
-            setFilteredData(null); // Clear filter if search term is empty
-            return;
-        }
-        try {
-            const response = await api.get(`/admin/filter?${filterType}=${encodeURIComponent(searchTerm)}`);
-            // The filter endpoint can return 'projects' or 'bookings'
-            const data = response.data.projects || response.data.bookings || [];
-            setFilteredData(data);
-        } catch (error) {
-            console.error("Filter error", error);
-            setFilteredData([]);
-        }
-    };
-    
-    // Determine which data to display: filtered results or all projects.
-    const displayData = filteredData !== null ? filteredData : projects;
+interface Transaction {
+  id: number
+  unit_number: string
+  buyer_name: string
+  amount: number
+  date: string
+  payment_method: string
+  booking_id: number | null
+}
 
-    return (
-        <div>
-            <h2 className="text-2xl font-semibold mb-4">Admin Oversight</h2>
-            
-            <form onSubmit={handleSearch} className="mb-6 p-4 bg-white rounded-lg shadow-md">
-                <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
-                    <input 
-                        type="text"
-                        value={searchTerm}
-                        onChange={e => setSearchTerm(e.target.value)}
-                        placeholder="Search..."
-                        className="flex-grow w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    />
-                    <select 
-                        value={filterType}
-                        onChange={e => setFilterType(e.target.value)}
-                        className="w-full sm:w-auto px-3 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    >
-                        <option value="project_name">By Project Name</option>
-                        <option value="buyer_name">By Buyer Name</option>
-                        <option value="unit_id">By Unit ID</option>
-                    </select>
-                    <button type="submit" className="w-full sm:w-auto bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 font-semibold transition-colors">
-                        Search
-                    </button>
-                </div>
-            </form>
+export default function AdminDashboard() {
+  const [builders, setBuilders]               = useState<Builder[]>([])
+  const [projects, setProjects]               = useState<Project[]>([])
+  const [displayProjects, setDisplayProjects] = useState<Project[]>([])
+  const [bookings, setBookings]               = useState<Booking[]>([])
+  const [displayBookings, setDisplayBookings] = useState<Booking[]>([])
+  const [transactions, setTransactions]       = useState<Transaction[]>([])
 
-            {isLoading ? <p>Loading data...</p> : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {displayData.map((item: DisplayItem) => (
-                        <div key={`${item.id}-${item.name || item.buyer_name}`} className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
-                            {/* Project-specific display */}
-                            {item.location && <h3 className="text-xl font-bold text-indigo-700">{item.name}</h3>}
-                            {/* Booking-specific display */}
-                            {item.buyer_name && <h3 className="text-xl font-bold text-green-700">Booking for {item.buyer_name}</h3>}
-                            
-                            <div className="text-gray-600 mt-2 space-y-1">
-                                {item.location && <p><strong>Location:</strong> {item.location}</p>}
-                                {item.num_units && <p><strong>Units:</strong> {item.num_units}</p>}
-                                
-                                {item.unit_number && <p><strong>Unit:</strong> {item.unit_number}</p>}
-                                {item.amount && <p><strong>Amount:</strong> ${item.amount.toLocaleString()}</p>}
-                                {item.date && <p><strong>Date:</strong> {new Date(item.date).toLocaleDateString()}</p>}
-                            </div>
-                        </div>
-                    ))}
-                </div>
+  const [builderFilter, setBuilderFilter]   = useState<number|null>(null)
+  const [projectSearch, setProjectSearch]   = useState<string>('')
+  const [bookingSearch, setBookingSearch]   = useState<string>('')
+
+  // 1) Load everything once
+  useEffect(() => {
+    api.get('/admin/builders')
+       .then(r => setBuilders(r.data.builders))
+       .catch(console.error)
+
+    api.get('/admin/projects')
+       .then(r => {
+         setProjects(r.data.projects)
+         setDisplayProjects(r.data.projects)
+       })
+       .catch(console.error)
+
+    api.get('/admin/bookings')
+       .then(r => {
+         setBookings(r.data.bookings)
+         setDisplayBookings(r.data.bookings)
+       })
+       .catch(console.error)
+
+    api.get('/admin/transactions')
+       .then(r => setTransactions(r.data.transactions))
+       .catch(console.error)
+  }, [])
+
+  // 2) Whenever builderFilter changes, fetch projects for that builder
+  useEffect(() => {
+    if (builderFilter !== null) {
+      api.get('/admin/projects/filter', { params: { builder_id: builderFilter } })
+         .then(r => setDisplayProjects(r.data.projects))
+         .catch(console.error)
+    } else {
+      // no builder filter → show all
+      setDisplayProjects(projects)
+    }
+    // clear any project‐name search when builder changes
+    setProjectSearch('')
+  }, [builderFilter, projects])
+
+  // 3) Whenever projectSearch changes, call general filter
+  useEffect(() => {
+    if (projectSearch) {
+      api.get('/admin/filter', { params: { project_name: projectSearch } })
+         .then(r => setDisplayProjects(r.data.projects))
+         .catch(console.error)
+    } else if (builderFilter === null) {
+      // no search & no builder filter → back to full list
+      setDisplayProjects(projects)
+    }
+  }, [projectSearch, builderFilter, projects])
+
+  // 4) Whenever bookingSearch changes, call bookings search
+  useEffect(() => {
+    if (bookingSearch) {
+      api.get('/admin/bookings/search', { params: { q: bookingSearch } })
+         .then(r => setDisplayBookings(r.data.bookings))
+         .catch(console.error)
+    } else {
+      setDisplayBookings(bookings)
+    }
+  }, [bookingSearch, bookings])
+
+  return (
+    <ProtectedRoute roles={['admin']}>
+      <div className="p-6 space-y-8">
+
+        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+
+        {/* Builders */}
+        <section>
+          <h2 className="text-2xl font-semibold mb-2">Registered Builders</h2>
+          <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {builders.map(b => (
+              <li key={b.id}>
+                <button
+                  onClick={() => setBuilderFilter(b.id)}
+                  className={`w-full text-left p-4 bg-white rounded shadow hover:bg-gray-50 ${
+                    builderFilter === b.id ? 'ring-2 ring-blue-600' : ''
+                  }`}
+                >
+                  {b.name} — {b.email}
+                </button>
+              </li>
+            ))}
+            {builderFilter !== null && (
+              <li>
+                <button
+                  onClick={() => setBuilderFilter(null)}
+                  className="w-full p-4 bg-red-100 rounded hover:bg-red-200"
+                >
+                  Clear Builder Filter
+                </button>
+              </li>
             )}
-             {!isLoading && displayData.length === 0 && <p className="text-center text-gray-500 mt-8">No results found.</p>}
-        </div>
-    );
-};
+          </ul>
+        </section>
 
-export default AdminDashboard;
+        {/* Projects */}
+        <section className="space-y-2">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-semibold">Projects</h2>
+            <input
+              type="text"
+              placeholder="Search projects…"
+              value={projectSearch}
+              onChange={e => setProjectSearch(e.target.value)}
+              className="border rounded p-2 w-64"
+            />
+          </div>
+          {displayProjects.length === 0 ? (
+            <p>No projects found.</p>
+          ) : (
+            <ul className="space-y-2">
+              {displayProjects.map(p => (
+                <li key={p.id}>
+                  <Link
+                    href={`/projects/${p.id}`}
+                    className="block p-4 bg-white rounded shadow hover:bg-gray-50"
+                  >
+                    <div className="font-medium">{p.name}</div>
+                    <div className="text-sm text-gray-500">{p.location}</div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        {/* Bookings */}
+        <section className="space-y-2">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-semibold">Bookings</h2>
+            <input
+              type="text"
+              placeholder="Search buyer or unit…"
+              value={bookingSearch}
+              onChange={e => setBookingSearch(e.target.value)}
+              className="border rounded p-2 w-64"
+            />
+          </div>
+          {displayBookings.length === 0 ? (
+            <p>No bookings found.</p>
+          ) : (
+            <ul className="space-y-2">
+              {displayBookings.map(b => (
+                <li key={b.id} className="p-4 bg-white rounded shadow">
+                  <div><strong>Project:</strong> {b.project_name}</div>
+                  <div><strong>Unit:</strong> {b.unit_number}</div>
+                  <div><strong>Buyer:</strong> {b.buyer_name}</div>
+                  <div><strong>Amount:</strong> ${b.amount}</div>
+                  <div><strong>Date:</strong> {b.date}</div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        {/* Transactions */}
+        <section className="space-y-2">
+          <h2 className="text-2xl font-semibold">Transactions Log</h2>
+          {transactions.length === 0 ? (
+            <p>No transactions recorded.</p>
+          ) : (
+            <ul className="space-y-2">
+              {transactions.map(t => (
+                <li key={t.id} className="p-4 bg-white rounded shadow">
+                  <div><strong>Txn ID:</strong> {t.id}</div>
+                  <div><strong>Unit:</strong> {t.unit_number}</div>
+                  <div><strong>Buyer:</strong> {t.buyer_name}</div>
+                  <div><strong>Amount:</strong> ${t.amount}</div>
+                  <div><strong>Date:</strong> {t.date}</div>
+                  <div><strong>Method:</strong> {t.payment_method}</div>
+                  <div>
+                    <strong>Booking ID:</strong>{' '}
+                    {t.booking_id !== null ? t.booking_id : 'unmatched'}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
+    </ProtectedRoute>
+  )
+}

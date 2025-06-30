@@ -1,39 +1,22 @@
-import { useEffect, ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/context/AuthContext';
 
-interface ProtectedRouteProps {
+export default function ProtectedRoute({
+  children,
+  roles,
+}: {
   children: ReactNode;
-  allowedRoles: Array<'builder' | 'admin' | 'buyer'>;
-}
-
-/**
- * A component that wraps pages to protect them based on user authentication and roles.
- * Redirects unauthenticated or unauthorized users.
- */
-const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
-  const { isLoggedIn, user } = useAuth();
+  roles: string[];
+}) {
+  const { user } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    // If user is not logged in, redirect to the main login page.
-    if (!isLoggedIn) {
-      router.push('/login');
-      return;
-    }
-    // If user is logged in but their role is not in the allowed list, redirect.
-    if (user && !allowedRoles.includes(user.role!)) {
-      router.push('/unauthorized');
-    }
-  }, [isLoggedIn, user, router, allowedRoles]);
+    if (user === null) router.replace('/login');
+    else if (!roles.includes(user.role)) router.replace('/unauthorized');
+  }, [user, router]);
 
-  // Render a loading state while checks are being performed.
-  if (!isLoggedIn || (user && !allowedRoles.includes(user.role!))) {
-    return <div className="text-center p-10">Loading...</div>;
-  }
-
-  // If checks pass, render the child components.
+  if (!user || !roles.includes(user.role)) return null;
   return <>{children}</>;
-};
-
-export default ProtectedRoute;
+}

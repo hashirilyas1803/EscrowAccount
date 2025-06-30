@@ -1,64 +1,277 @@
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import api from '@/lib/api';
+// src/components/dashboards/BuyerDashboard.tsx
 
-/**
- * The main dashboard for the Buyer role, showing their current bookings
- * and a list of all available projects to browse.
- */
-const BuyerDashboard = () => {
-    const [myBookings, setMyBookings] = useState<any[]>([]);
-    const [allProjects, setAllProjects] = useState<any[]>([]);
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import ProtectedRoute from '@/components/ProtectedRoute'
+import api from '@/lib/api'
+import { useAuth } from '@/context/AuthContext'
 
-    useEffect(() => {
-        // Fetch the current buyer's bookings.
-        api.get('/buyer/bookings').then(res => setMyBookings(res.data.bookings));
-        // Fetch all projects available on the platform for browsing.
-        api.get('/buyer/projects').then(res => {
-            if (res.data.projects) setAllProjects(res.data.projects);
-        });
-    }, []);
+interface Project {
+  id: number
+  name: string
+  location: string
+}
 
-    return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* My Bookings Section */}
+interface Booking {
+  id: number
+  project_id: number
+  project_name: string
+  unit_id: number
+  unit_number: string
+  amount: number
+  date: string
+}
+
+interface Transaction {
+  id: number
+  unit_number: string
+  unit_id: number
+  booking_id: number
+  amount: number
+  date: string
+}
+
+interface UnitRow {
+  id: number
+  project_id: number
+  unit_id: string
+  floor: number
+  area: number
+  price: number
+  booked: boolean
+}
+
+export default function BuyerDashboard() {
+  const { user } = useAuth()
+
+  const [projects, setProjects]           = useState<Project[]>([])
+  const [allUnits, setAllUnits]           = useState<UnitRow[]>([])
+  const [bookings, setBookings]           = useState<Booking[]>([])
+  const [transactions, setTransactions]   = useState<Transaction[]>([])
+
+  // form state
+  const [txUnit, setTxUnit]               = useState<string>('')
+  const [txAmount, setTxAmount]           = useState<string>('')
+  const [txMethod, setTxMethod]           = useState<'cash'|'bank transfer'>('bank transfer')
+  const [txDate, setTxDate]               = useState<string>(new Date().toISOString().slice(0,16))
+  const [txError, setTxError]             = useState<string|null>(null)
+  const [txSuccess, setTxSuccess]         = useState<string|null>(null)
+  const [txLoading, setTxLoading]         = useState<boolean>(false)
+
+  // 1️⃣ load projects, bookings & transactions
+  useEffect(() => {
+    api.get('/buyer/projects')
+       .then(r => setProjects(r.data.projects))
+       .catch(console.error)
+
+    api.get('/buyer/bookings')
+       .then(r => {
+         setBookings(r.data.bookings)
+         if (r.data.bookings.length) setTxUnit(r.data.bookings[0].unit_number)
+       })
+       .catch(console.error)
+
+    api.get('/buyer/transactions')
+       .then(r => setTransactions(r.data.transactions))
+       .catch(console.error)
+  }, [user])
+
+  // once you have projects, fetch all their units
+  useEffect(() => {
+    if (!projects.length) return
+    Promise.all(
+      projects.map(p =>
+        api.get<{ units: UnitRow[] }>(`/buyer/projects/${p.id}/units`)
+           .then(r => r.data.units)
+           .catch(() => [])
+      )
+    )
+    .then(arrays => setAllUnits(arrays.flat()))
+    .catch(console.error)
+  }, [projects])
+
+  // lookup sets
+  const bookedByYou = new Set(bookings.map(b => b.unit_id))
+  const paidUnits   = new Set(transactions.map(t => t.unit_id))
+  const matchedUnits = new Set(
+  transactions
+    .filter(t => t.booking_id !== null)    // only those the builder matched
+    .map(t => t.unit_id)
+)
+
+
+  // build eligibleUnits for dropdown
+  const eligibleUnits = allUnits
+    .filter(u =>
+      !u.booked ||
+      (bookedByYou.has(u.id) && !paidUnits.has(u.id))
+    )
+    .map(u => ({
+      value: u.unit_id,
+      label: u.booked
+        ? `${u.unit_id} — $${u.price} (Booked by you)`
+        : `${u.unit_id} — $${u.price} (Available)`
+    }))
+
+  const handleTransaction = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setTxError(null)
+    setTxSuccess(null)
+
+    if (!txUnit) {
+      setTxError('Please select a unit')
+      return
+    }
+    const amt = parseFloat(txAmount)
+    if (isNaN(amt) || amt <= 0) {
+      setTxError('Please enter a valid amount')
+      return
+    }
+
+    setTxLoading(true)
+    try {
+      await api.post('/buyer/transactions', {
+        unit_id: txUnit,
+        amount: amt,
+        date:   new Date(txDate).toISOString(),
+        payment_method: txMethod,
+      })
+      setTxSuccess('Transaction recorded successfully!')
+
+      // refresh bookings & transactions
+      const [bk, tx] = await Promise.all([
+        api.get('/buyer/bookings'),
+        api.get('/buyer/transactions'),
+      ])
+      setBookings(bk.data.bookings)
+      setTransactions(tx.data.transactions)
+
+      if (bk.data.bookings.length) setTxUnit(bk.data.bookings[0].unit_number)
+      setTxAmount('')
+    } catch (err: any) {
+      setTxError(err.response?.data?.message || 'Failed to record transaction')
+    } finally {
+      setTxLoading(false)
+    }
+  }
+
+  return (
+    <ProtectedRoute roles={['buyer']}>
+      <div className="space-y-12">
+
+        {/* Projects */}
+        <section>
+          <h1 className="text-2xl font-bold mb-4">Browse Projects</h1>
+          {projects.length === 0
+            ? <p>No projects available.</p>
+            : (
+              <ul className="space-y-2">
+                {projects.map(p => (
+                  <li key={p.id}>
+                    <Link href={`/projects/${p.id}`} className="block p-4 bg-white rounded shadow hover:bg-gray-50">
+                      <div className="font-medium">{p.name}</div>
+                      <div className="text-sm text-gray-500">{p.location}</div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+        </section>
+
+        {/* Your Bookings */}
+        <section>
+          <h2 className="text-xl font-semibold mb-4">Your Bookings</h2>
+          {bookings.length === 0
+            ? <p>You have no bookings yet.</p>
+            : (
+              <ul className="space-y-4">
+                {bookings.map(b => (
+                  <li key={b.id} className="p-4 bg-white rounded shadow">
+                    <div><strong>Project:</strong> {b.project_name}</div>
+                    <div><strong>Unit:</strong> {b.unit_number}</div>
+                    <div><strong>Amount:</strong> ${b.amount}</div>
+                    <div><strong>Date:</strong> {b.date}</div>
+                    <div>
+                      <strong>Status:</strong>{' '}
+                      {matchedUnits.has(b.unit_id) ? 'Paid' : 'Unpaid'}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+        </section>
+
+        {/* Make a Payment */}
+        <section>
+          <h2 className="text-xl font-semibold mb-4">Make a Payment</h2>
+          <form onSubmit={handleTransaction} className="space-y-4 max-w-md bg-white p-6 rounded shadow">
+            {/* Unit */}
             <div>
-                <h2 className="text-2xl font-semibold mb-4">My Booked Units</h2>
-                <div className="space-y-4">
-                    {myBookings.length > 0 ? (
-                        myBookings.map(booking => (
-                            <div key={booking.id} className="bg-white p-6 rounded-lg shadow-md">
-                                <h3 className="text-xl font-bold text-green-700">Unit: {booking.unit_number}</h3>
-                                <p className="text-gray-600">Booking Amount: ${booking.amount.toLocaleString()}</p>
-                                <p className="text-gray-600">Date: {new Date(booking.date).toLocaleDateString()}</p>
-                            </div>
-                        ))
-                    ) : <p className="text-gray-500 mt-4">You have no bookings yet.</p>}
-                </div>
+              <label className="block text-sm font-medium">Select Unit</label>
+              <select
+                value={txUnit}
+                onChange={e => setTxUnit(e.target.value)}
+                className="mt-1 block w-full border rounded p-2"
+                required
+              >
+                <option value="">— choose one —</option>
+                {eligibleUnits.map(o => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+            </div>
+            {/* Amount */}
+            <div>
+              <label className="block text-sm font-medium">Amount</label>
+              <input
+                type="number"
+                value={txAmount}
+                onChange={e => setTxAmount(e.target.value)}
+                className="mt-1 block w-full border rounded p-2"
+                min="0.01"
+                step="0.01"
+                required
+              />
+            </div>
+            {/* Date */}
+            <div>
+              <label className="block text-sm font-medium">Date &amp; Time</label>
+              <input
+                type="datetime-local"
+                value={txDate}
+                onChange={e => setTxDate(e.target.value)}
+                className="mt-1 block w-full border rounded p-2"
+                required
+              />
+            </div>
+            {/* Method */}
+            <div>
+              <label className="block text-sm font-medium">Payment Method</label>
+              <select
+                value={txMethod}
+                onChange={e => setTxMethod(e.target.value as any)}
+                className="mt-1 block w-full border rounded p-2"
+                required
+              >
+                <option value="bank transfer">Bank Transfer</option>
+                <option value="cash">Cash</option>
+              </select>
             </div>
 
-            {/* Available Projects Section */}
-            <div>
-                <h2 className="text-2xl font-semibold mb-4">Available Projects</h2>
-                <div className="space-y-4">
-                    {allProjects.length > 0 ? (
-                        allProjects.map(project => (
-                             <div key={project.id} className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
-                                <h3 className="text-xl font-bold text-indigo-700">{project.name}</h3>
-                                <p className="text-gray-600">Location: {project.location}</p>
-                                <p className="text-gray-600">Total Units: {project.num_units}</p>
-                                <Link href={`/projects/${project.id}`} legacyBehavior>
-                                    <a className="mt-4 inline-block bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 font-semibold">
-                                        View Units & Book
-                                    </a>
-                                </Link>
-                            </div>
-                        ))
-                    ) : <p className="text-gray-500 mt-4">No projects available at the moment.</p>}
-                </div>
-            </div>
-        </div>
-    );
-};
+            {txError   && <p className="text-red-600 text-sm">{txError}</p>}
+            {txSuccess && <p className="text-green-600 text-sm">{txSuccess}</p>}
 
-export default BuyerDashboard;
+            <button
+              type="submit"
+              disabled={txLoading}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+            >
+              {txLoading ? 'Recording…' : 'Record Transaction'}
+            </button>
+          </form>
+        </section>
+
+      </div>
+    </ProtectedRoute>
+  )
+}

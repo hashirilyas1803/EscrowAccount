@@ -1,79 +1,51 @@
-import { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  ReactNode,
+  useState,
+} from 'react';
+import api from '@/lib/api';
 
-// Defines the shape of the user object and authentication state.
-interface AuthState {
-  isLoggedIn: boolean;
-  user: {
-    id: number | null;
-    role: 'builder' | 'admin' | 'buyer' | null;
-  } | null;
+type Role = 'builder' | 'buyer' | 'admin';
+export interface User { id: number; name: string; role: Role; }
+
+interface AuthContextType {
+  user: User | null;
+  login: (email: string, password: string, role: Role) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
-// Defines the context type, including state and actions.
-interface AuthContextType extends AuthState {
-  login: (userData: any, roleType: 'user' | 'buyer') => void;
-  logout: () => void;
-  checkLoginStatus: () => void;
-}
+const AuthContext = createContext<AuthContextType>({} as any);
 
-// Create the context with an initial undefined value.
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-/**
- * Provides authentication state and actions to its children.
- * Manages user data in sessionStorage to persist across page reloads.
- */
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [auth, setAuth] = useState<AuthState>({
-    isLoggedIn: false,
-    user: null,
-  });
+  const [user, setUser] = useState<User | null>(null);
 
-  // Checks sessionStorage on initial load to restore login state.
-  const checkLoginStatus = () => {
-    const storedUser = sessionStorage.getItem('user');
-    if (storedUser) {
-      setAuth({ isLoggedIn: true, user: JSON.parse(storedUser) });
+  const login = async (email: string, password: string, role: Role) => {
+    if (role === 'buyer') {
+      // Buyer login
+      const res = await api.post('/buyer/auth/login', { email, password });
+      setUser({ id: res.data.buyer_id, name: res.data.name, role: 'buyer' });
     } else {
-      setAuth({ isLoggedIn: false, user: null });
+      // Builder/Admin login
+      const res = await api.post('/auth/login', { email, password, role });
+      setUser({ id: res.data.user_id, name: res.data.name, role: res.data.role });
     }
   };
 
-  // Run checkLoginStatus once when the component mounts.
-  useEffect(() => {
-    checkLoginStatus();
-  }, []);
-
-  // Sets user data in state and sessionStorage upon successful login.
-  const login = (userData: any, type: 'user' | 'buyer') => {
-    const userToStore = type === 'user' 
-      ? { id: userData.user_id, role: userData.role }
-      : { id: userData.buyer_id, role: 'buyer' };
-      
-    sessionStorage.setItem('user', JSON.stringify(userToStore));
-    setAuth({ isLoggedIn: true, user: userToStore });
-  };
-
-  // Clears user data from state and sessionStorage upon logout.
-  const logout = () => {
-    sessionStorage.removeItem('user');
-    setAuth({ isLoggedIn: false, user: null });
+  const logout = async () => {
+    if (user?.role === 'buyer') {
+      await api.post('/buyer/auth/logout');
+    } else {
+      await api.post('/auth/logout');
+    }
+    setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ ...auth, login, logout, checkLoginStatus }}>
+    <AuthContext.Provider value={{ user, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-/**
- * Custom hook for easy access to the authentication context.
- */
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+export const useAuth = () => useContext(AuthContext);
