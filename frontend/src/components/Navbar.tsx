@@ -9,28 +9,29 @@ export default function Navbar() {
   const { user, logout } = useAuth()
 
   return (
-    <nav className="bg-white shadow">
+    <nav className="p-3 mb-2 bg-dark text-dark-emphasis">
       <div className="max-w-7xl mx-auto px-4 py-2 flex justify-between items-center">
         {/* Site logo/name linking back to home */}
         <Link href="/" className="text-2xl font-bold">
           EscrowBank
         </Link>
 
-        <div className="space-x-4">
+        <div className="flex items-center gap-4">
           {user ? (
             // If user is authenticated, show role and logout button
             <>
               <span className="capitalize">{user.role}</span>
+              <span className="capitalize">{user.name}</span>
               <button
                 onClick={logout}
-                className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                className="px-3 py-1 rounded btn btn-secondary"
               >
                 Logout
               </button>
             </>
           ) : (
             // If no user, show link to login page
-            <Link href="/login" className="px-3 py-1 hover:underline">
+            <Link href="/login" className="px-3 py-1">
               Login
             </Link>
           )}

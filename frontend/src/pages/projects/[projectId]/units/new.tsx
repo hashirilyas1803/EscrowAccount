@@ -51,99 +51,85 @@ export default function NewUnitPage() {
     }
   }
 
-  return (
-    // Restrict this page to authenticated builders
-    <ProtectedRoute roles={['builder']}>
-      <form
-        onSubmit={submit}
-        className="max-w-md mx-auto p-6 bg-white rounded shadow space-y-6"
+return (
+  // Restrict this page to authenticated builders
+  <ProtectedRoute roles={['builder']}>
+    <form
+      onSubmit={submit}
+      className="max-w-md mx-auto p-6 rounded shadow flex flex-col gap-4"
+    >
+      <h1 className="text-2xl font-bold">Add New Unit</h1>
+
+      {/* Display validation or API errors */}
+      {error && <p className="text-red-600 text-sm">{error}</p>}
+
+      {/* Unit Number */}
+      <div>
+        <input
+          id="unitId"
+          type="text"
+          placeholder="Unit Number"
+          value={unitId}
+          onChange={e => setUnitId(e.target.value)}
+          required
+          className="mt-1 block w-full border rounded p-2"
+        />
+      </div>
+
+      {/* Floor */}
+      <div>
+        <input
+          id="floor"
+          type="number"
+          placeholder="Floor"
+          value={floor}
+          onChange={e => setFloor(e.target.value === '' ? '' : Number(e.target.value))}
+          onFocus={e => (e.target as HTMLInputElement).select()}
+          min={0}
+          required
+          className="mt-1 block w-full border rounded p-2"
+        />
+      </div>
+
+      {/* Area */}
+      <div>
+        <input
+          id="area"
+          type="number"
+          placeholder="Area"
+          value={area}
+          onChange={e => setArea(e.target.value === '' ? '' : Number(e.target.value))}
+          onFocus={e => (e.target as HTMLInputElement).select()}
+          min={0}
+          required
+          className="mt-1 block w-full border rounded p-2"
+        />
+      </div>
+
+      {/* Price */}
+      <div>
+        <input
+          id="price"
+          type="number"
+          placeholder="Price"
+          value={price}
+          onChange={e => setPrice(e.target.value === '' ? '' : Number(e.target.value))}
+          onFocus={e => (e.target as HTMLInputElement).select()}
+          min={0}
+          required
+          className="mt-1 block w-full border rounded p-2"
+        />
+      </div>
+
+      {/* Submit button */}
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full py-2 rounded disabled:opacity-50 btn btn-secondary"
       >
-        <h1 className="text-2xl font-bold">Add New Unit</h1>
-
-        {/* Display validation or API errors */}
-        {error && (
-          <p className="text-red-600 text-sm">{error}</p>
-        )}
-
-        {/* Unit Number input */}
-        <div>
-          <label htmlFor="unitId" className="block text-sm font-medium">
-            Unit Number
-          </label>
-          <input
-            id="unitId"
-            type="text"
-            placeholder="e.g. A-101"
-            value={unitId}
-            onChange={e => setUnitId(e.target.value)}
-            required
-            className="mt-1 block w-full border rounded p-2"
-          />
-        </div>
-
-        {/* Floor input */}
-        <div>
-          <label htmlFor="floor" className="block text-sm font-medium">
-            Floor
-          </label>
-          <input
-            id="floor"
-            type="number"
-            placeholder="e.g. 3"
-            value={floor}
-            onChange={e => setFloor(e.target.value === '' ? '' : Number(e.target.value))}
-            onFocus={e => (e.target as HTMLInputElement).select()}
-            min={0}
-            required
-            className="mt-1 block w-full border rounded p-2"
-          />
-        </div>
-
-        {/* Area input */}
-        <div>
-          <label htmlFor="area" className="block text-sm font-medium">
-            Area (sq ft)
-          </label>
-          <input
-            id="area"
-            type="number"
-            placeholder="e.g. 1200"
-            value={area}
-            onChange={e => setArea(e.target.value === '' ? '' : Number(e.target.value))}
-            onFocus={e => (e.target as HTMLInputElement).select()}
-            min={0}
-            required
-            className="mt-1 block w-full border rounded p-2"
-          />
-        </div>
-
-        {/* Price input */}
-        <div>
-          <label htmlFor="price" className="block text-sm font-medium">
-            Price ($)
-          </label>
-          <input
-            id="price"
-            type="number"
-            placeholder="e.g. 350000"
-            value={price}
-            onChange={e => setPrice(e.target.value === '' ? '' : Number(e.target.value))}
-            onFocus={e => (e.target as HTMLInputElement).select()}
-            min={0}
-            required
-            className="mt-1 block w-full border rounded p-2"
-          />
-        </div>
-
-        {/* Submit button with loading state */}
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50"
-        >
-          {loading ? 'Creating…' : 'Create Unit'}
-        </button>
-      </form>
-    </ProtectedRoute>
-  )
+        {loading ? 'Creating…' : 'Create Unit'}
+      </button>
+    </form>
+  </ProtectedRoute>
+)
 }

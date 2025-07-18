@@ -33,10 +33,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+    <div className="min-h-screen flex items-center justify-center">
       <form
         onSubmit={handleSubmit}
-        className="bg-white p-8 rounded shadow-md w-full max-w-sm space-y-4"
+        className="p-8 rounded shadow-md w-1/2 flex flex-col gap-4"
       >
         <h2 className="text-xl font-semibold text-center">Sign In</h2>
         {/* Display login error if present */}
@@ -44,7 +44,6 @@ export default function LoginPage() {
 
         {/* Role selection dropdown */}
         <div>
-          <label className="block text-sm">Role</label>
           <select
             value={role}
             onChange={e => setRole(e.target.value as any)}
@@ -58,10 +57,10 @@ export default function LoginPage() {
 
         {/* Email input field */}
         <div>
-          <label className="block text-sm">Email</label>
           <input
             type="email"
             value={email}
+            placeholder='Email'
             onChange={e => setEmail(e.target.value)}
             required
             className="mt-1 block w-full border rounded p-2"
@@ -70,10 +69,10 @@ export default function LoginPage() {
 
         {/* Password input field */}
         <div>
-          <label className="block text-sm">Password</label>
           <input
             type="password"
             value={password}
+            placeholder='Password'
             onChange={e => setPassword(e.target.value)}
             required
             className="mt-1 block w-full border rounded p-2"
@@ -83,7 +82,7 @@ export default function LoginPage() {
         {/* Submit button */}
         <button
           type="submit"
-          className="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700"
+          className="w-full bg-primary-subtle text-dark py-2 rounded hover:bg-indigo-700"
         >
           Login
         </button>

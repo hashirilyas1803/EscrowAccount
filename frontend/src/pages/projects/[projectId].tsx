@@ -112,7 +112,7 @@ export default function ProjectDetail() {
           {user?.role === 'builder' && (
             <Link
               href={`/projects/${project.id}/units/new`}
-              className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+              className="px-3 py-1 rounded"
             >
               + Add Unit
             </Link>
@@ -121,7 +121,7 @@ export default function ProjectDetail() {
 
         <ul className="space-y-4">
           {units.map(u => (
-            <li key={u.id} className="bg-white rounded shadow p-4 space-y-3">
+            <li key={u.id} className="rounded shadow p-4 space-y-3">
               {user?.role === 'buyer' ? (
                 // Buyer sees detailed unit info and can book if available
                 <>
@@ -140,7 +140,7 @@ export default function ProjectDetail() {
                   {/* Inline booking form if unit not booked */}
                   {!u.booked && (
                     bookingFormFor === u.id ? (
-                      <div className="border-t pt-3 space-y-2">
+                      <div className="pt-3 flex flex-col gap-4">
                         {/* Amount input */}
                         <div>
                           <label className="block text-sm">Amount</label>
@@ -158,17 +158,17 @@ export default function ProjectDetail() {
                           <p className="text-red-500 text-sm">{bookingError}</p>
                         )}
                         {/* Confirm/Cancel buttons */}
-                        <div className="flex space-x-2">
+                        <div className="flex flex-row gap-2">
                           <button
                             onClick={() => submitBooking(u)}
                             disabled={loadingBooking}
-                            className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 disabled:opacity-50"
+                            className="px-3 py-1 rounded btn btn-secondary"
                           >
                             {loadingBooking ? 'Booking…' : 'Confirm'}
                           </button>
                           <button
                             onClick={() => setBookingFormFor(null)}
-                            className="px-3 py-1 rounded border"
+                            className="px-3 py-1 rounded border btn btn-secondary"
                           >Cancel</button>
                         </div>
                       </div>
@@ -179,7 +179,7 @@ export default function ProjectDetail() {
                           setAmountInput(u.price.toString())
                           setBookingError(null)
                         }}
-                        className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+                        className="px-3 py-1 rounded btn btn-secondary"
                       >Book this unit</button>
                     )
                   )}
@@ -189,14 +189,14 @@ export default function ProjectDetail() {
                 <div className="flex justify-between items-center">
                   <div>
                     <div className="font-medium">Unit {u.unit_id}</div>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm">
                       Floor {u.floor} · {u.area} sqft · ${u.price}{' '}
                       {u.booked && <span className="text-green-600">(Booked)</span>}
                     </div>
                   </div>
                   <Link
                     href={`/projects/${project.id}/units/${u.id}`}
-                    className="text-indigo-600 hover:underline"
+                    className="hover:underline"
                   >Details</Link>
                 </div>
               )}

@@ -106,7 +106,7 @@ export default function BuilderDashboard() {
   return (
     // Restrict access to users with builder role
     <ProtectedRoute roles={['builder']}>
-      <div className="space-y-8 p-6">
+      <div className="flex flex-col gap-4">
 
         {/* Page title */}
         <h1 className="text-3xl font-bold">Builder Dashboard</h1>
@@ -128,7 +128,7 @@ export default function BuilderDashboard() {
             <h2 className="text-2xl font-semibold">Your Projects</h2>
             <Link
               href="/projects/new"
-              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+              className="px-4 py-2 rounded"
             >
               + Add Project
             </Link>
@@ -141,10 +141,10 @@ export default function BuilderDashboard() {
                 <li key={p.id}>
                   <Link
                     href={`/projects/${p.id}`}
-                    className="block p-4 bg-white rounded shadow hover:bg-gray-50"
+                    className="block p-4 rounded shadow"
                   >
                     <div className="font-medium">{p.name}</div>
-                    <div className="text-sm text-gray-500">{p.location}</div>
+                    <div className="text-sm">{p.location}</div>
                   </Link>
                 </li>
               ))}
@@ -160,7 +160,7 @@ export default function BuilderDashboard() {
           ) : unmatched.map(tx => (
             <div
               key={tx.id}
-              className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 p-4 bg-yellow-50 rounded"
+              className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 p-4 rounded"
             >
               <div>ID: {tx.id} — ${tx.amount}</div>
 
@@ -216,8 +216,8 @@ export default function BuilderDashboard() {
 // Reusable Card component for displaying key-value metrics
 function Card({ label, value }: { label: string; value: string|number }) {
   return (
-    <div className="bg-white rounded shadow p-4">
-      <p className="text-sm text-gray-600">{label}</p>
+    <div className="p-4 rounded shadow-lg hover:shadow-2xl transition-shadow bg-dark-800">
+      <p className="text-sm">{label}</p>
       <p className="mt-1 text-2xl font-semibold">{value}</p>
     </div>
   )

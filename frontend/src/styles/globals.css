@@ -3,11 +3,21 @@
   They inject the base styles, component classes, and utility classes
   into the application's global stylesheet.
 */
+@import "bootstrap/dist/css/bootstrap.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 body {
-  background-color: #f9fafb;
+  background-color: #212529;
+  color: #f8f9fa;
   font-family: ui-sans-serif, system-ui, -apple-system;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+a:hover {
+  text-decoration: underline;
 }

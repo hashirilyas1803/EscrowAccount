@@ -120,38 +120,56 @@ export default function AdminDashboard() {
 
   return (
     <ProtectedRoute roles={[ 'admin' ]}>
-      <div className="p-6 space-y-8">
+      <div className="flex flex-col gap-4">
 
         {/* Page header */}
         <h1 className="text-3xl font-bold">Admin Dashboard</h1>
 
         {/* Builders list with filter buttons */}
         <section>
-          <h2 className="text-2xl font-semibold mb-2">Registered Builders</h2>
-          <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {builders.map(b => (
-              <li key={b.id}>
-                <button
-                  onClick={() => setBuilderFilter(b.id)}
-                  className={`w-full text-left p-4 bg-white rounded shadow hover:bg-gray-50 ${
-                    builderFilter === b.id ? 'ring-2 ring-blue-600' : ''
-                  }`}
-                >
-                  {b.name} — {b.email}
-                </button>
-              </li>
-            ))}
-            {/* Show reset button when a builder is selected */}
-            {builderFilter !== null && (
-              <li>
-                <button
-                  onClick={() => setBuilderFilter(null)}
-                  className="w-full p-4 bg-red-100 rounded hover:bg-red-200"
-                >
-                  Clear Builder Filter
-                </button>
-              </li>
-            )}
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-semibold">Registered Builders</h2>
+
+              {/* Show the active filter as a pill */}
+              {builderFilter !== null && (
+                <div className="flex items-center space-x-2">
+                  <span className="px-3 py-1.5 rounded-full text-sm">
+                    {
+                      // find the name for the active builder
+                      builders.find(b => b.id === builderFilter)?.name
+                    }
+                  </span>
+                  <button
+                    onClick={() => setBuilderFilter(null)}
+                    className="btn btn-secondary text-sm"
+                    aria-label="Clear builder filter"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+            </div>
+            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {builders.map((b) => {
+              const isActive = builderFilter === b.id;
+              return (
+                <li key={b.id}>
+                  <button
+                    onClick={() => setBuilderFilter(b.id)}
+                    className={`
+                      w-full text-left p-4 rounded shadow transition btn
+                      ${isActive
+                        ? 'btn-secondary'
+                        : 'btn-dark'}
+                    `}
+                    aria-pressed={isActive}
+                  >
+                    <div className="text-sm">{b.name}</div>
+                    <div className="text-sm">{b.email}</div>
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         </section>
 
@@ -175,10 +193,10 @@ export default function AdminDashboard() {
                 <li key={p.id}>
                   <Link
                     href={`/projects/${p.id}`}
-                    className="block p-4 bg-white rounded shadow hover:bg-gray-50"
+                    className="block p-4 rounded shadow"
                   >
                     <div className="font-medium">{p.name}</div>
-                    <div className="text-sm text-gray-500">{p.location}</div>
+                    <div className="text-sm">{p.location}</div>
                   </Link>
                 </li>
               ))}
@@ -203,7 +221,7 @@ export default function AdminDashboard() {
           ) : (
             <ul className="space-y-2">
               {displayBookings.map(b => (
-                <li key={b.id} className="p-4 bg-white rounded shadow">
+                <li key={b.id} className="p-4 rounded shadow">
                   <div><strong>Project:</strong> {b.project_name}</div>
                   <div><strong>Unit:</strong> {b.unit_number}</div>
                   <div><strong>Buyer:</strong> {b.buyer_name}</div>
@@ -223,7 +241,7 @@ export default function AdminDashboard() {
           ) : (
             <ul className="space-y-2">
               {transactions.map(t => (
-                <li key={t.id} className="p-4 bg-white rounded shadow">
+                <li key={t.id} className="p-4 rounded shadow">
                   <div><strong>Txn ID:</strong> {t.id}</div>
                   <div><strong>Unit:</strong> {t.unit_number}</div>
                   <div><strong>Buyer:</strong> {t.buyer_name}</div>

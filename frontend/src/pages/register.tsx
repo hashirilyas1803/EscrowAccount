@@ -61,7 +61,7 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <form
         onSubmit={handleSubmit}
-        className="bg-white p-8 rounded shadow-md w-full max-w-md space-y-4"
+        className="p-8 rounded shadow-md w-1/2 flex flex-col gap-4"
       >
         <h2 className="text-xl font-semibold text-center">Create Account</h2>
         {/* Display any submission error */}
@@ -83,12 +83,10 @@ export default function RegisterPage() {
 
         {/* Full name or name field */}
         <div>
-          <label className="block text-sm font-medium">
-            {role === 'buyer' ? 'Full Name' : 'Name'}
-          </label>
           <input
             type="text"
             value={name}
+            placeholder='Name'
             onChange={e => setName(e.target.value)}
             required
             className="mt-1 block w-full border rounded p-2"
@@ -99,20 +97,20 @@ export default function RegisterPage() {
         {role === 'buyer' && (
           <>
             <div>
-              <label className="block text-sm font-medium">Emirates ID</label>
               <input
                 type="text"
                 value={emirates_id}
+                placeholder='Emirates ID'
                 onChange={e => setEmiratesId(e.target.value)}
                 required
                 className="mt-1 block w-full border rounded p-2"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium">Phone Number</label>
               <input
                 type="text"
                 value={phone_number}
+                placeholder='Phone Number'
                 onChange={e => setPhoneNumber(e.target.value)}
                 required
                 className="mt-1 block w-full border rounded p-2"
@@ -123,10 +121,10 @@ export default function RegisterPage() {
 
         {/* Email input */}
         <div>
-          <label className="block text-sm font-medium">Email</label>
           <input
             type="email"
             value={email}
+            placeholder='Email'
             onChange={e => setEmail(e.target.value)}
             required
             className="mt-1 block w-full border rounded p-2"
@@ -135,10 +133,10 @@ export default function RegisterPage() {
 
         {/* Password input */}
         <div>
-          <label className="block text-sm font-medium">Password</label>
           <input
             type="password"
             value={password}
+            placeholder='Password'
             onChange={e => setPassword(e.target.value)}
             required
             className="mt-1 block w-full border rounded p-2"
@@ -148,7 +146,7 @@ export default function RegisterPage() {
         {/* Submit button */}
         <button
           type="submit"
-          className="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700"
+          className="w-full bg-primary-subtle text-dark py-2 rounded hover:bg-indigo-700"
         >
           Create Account
         </button>

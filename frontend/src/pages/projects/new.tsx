@@ -53,7 +53,7 @@ export default function NewProjectPage() {
     <ProtectedRoute roles={['builder']}>
       <form
         onSubmit={submit}
-        className="max-w-md mx-auto p-6 bg-white rounded shadow space-y-6"
+        className="w-1/2 mx-auto p-6 rounded shadow flex flex-col gap-4"
       >
         <h1 className="text-2xl font-bold">Create New Project</h1>
 
@@ -64,13 +64,10 @@ export default function NewProjectPage() {
 
         {/* Project Name Input */}
         <div>
-          <label htmlFor="projectName" className="block text-sm font-medium">
-            Project Name
-          </label>
           <input
             id="projectName"
             type="text"
-            placeholder="e.g. Riverside Apartments"
+            placeholder="Project Name"
             value={name}
             onChange={e => setName(e.target.value)}
             required
@@ -80,13 +77,10 @@ export default function NewProjectPage() {
 
         {/* Location Input */}
         <div>
-          <label htmlFor="projectLoc" className="block text-sm font-medium">
-            Location
-          </label>
           <input
             id="projectLoc"
             type="text"
-            placeholder="e.g. Downtown, Dubai"
+            placeholder="Location"
             value={loc}
             onChange={e => setLoc(e.target.value)}
             required
@@ -96,13 +90,10 @@ export default function NewProjectPage() {
 
         {/* Number of Units Input */}
         <div>
-          <label htmlFor="projectUnits" className="block text-sm font-medium">
-            Number of Units
-          </label>
           <input
             id="projectUnits"
             type="number"
-            placeholder="e.g. 20"
+            placeholder="Number of Units"
             value={units}
             onChange={e => {
               const v = e.target.value
@@ -120,7 +111,7 @@ export default function NewProjectPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 disabled:opacity-50"
+          className="w-full py-2 rounded btn btn-secondary"
         >
           {loading ? 'Creating…' : 'Create Project'}
         </button>

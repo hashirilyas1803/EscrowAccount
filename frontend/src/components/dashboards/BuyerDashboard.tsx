@@ -183,9 +183,9 @@ export default function BuyerDashboard() {
             <ul className="space-y-2">
               {projects.map(p => (
                 <li key={p.id}>
-                  <Link href={`/projects/${p.id}`} className="block p-4 bg-white rounded shadow hover:bg-gray-50">
+                  <Link href={`/projects/${p.id}`} className="block p-4 rounded shadow">
                     <div className="font-medium">{p.name}</div>
-                    <div className="text-sm text-gray-500">{p.location}</div>
+                    <div className="text-sm">{p.location}</div>
                   </Link>
                 </li>
               ))}
@@ -201,7 +201,7 @@ export default function BuyerDashboard() {
           ) : (
             <ul className="space-y-4">
               {bookings.map(b => (
-                <li key={b.id} className="p-4 bg-white rounded shadow">
+                <li key={b.id} className="p-4 rounded shadow">
                   <div><strong>Project:</strong> {b.project_name}</div>
                   <div><strong>Unit:</strong> {b.unit_number}</div>
                   <div><strong>Amount:</strong> ${b.amount}</div>
@@ -219,17 +219,16 @@ export default function BuyerDashboard() {
         {/* Make a Payment section */}
         <section>
           <h2 className="text-xl font-semibold mb-4">Make a Payment</h2>
-          <form onSubmit={handleTransaction} className="space-y-4 max-w-md bg-white p-6 rounded shadow">
+          <form onSubmit={handleTransaction} className="flex flex-col gap-4 w-1/2 p-6 rounded shadow">
             {/* Unit dropdown */}
             <div>
-              <label className="block text-sm font-medium">Select Unit</label>
               <select
                 value={txUnit}
                 onChange={e => setTxUnit(e.target.value)}
                 className="mt-1 block w-full border rounded p-2"
                 required
               >
-                <option value="">— choose one —</option>
+                <option value="">Select Unit</option>
                 {eligibleUnits.map(o => (
                   <option key={o.value} value={o.value}>{o.label}</option>
                 ))}
@@ -237,10 +236,10 @@ export default function BuyerDashboard() {
             </div>
             {/* Amount input */}
             <div>
-              <label className="block text-sm font-medium">Amount</label>
               <input
                 type="number"
                 value={txAmount}
+                placeholder='Amount'
                 onChange={e => setTxAmount(e.target.value)}
                 className="mt-1 block w-full border rounded p-2"
                 min="0.01"
@@ -250,7 +249,6 @@ export default function BuyerDashboard() {
             </div>
             {/* Date/time picker */}
             <div>
-              <label className="block text-sm font-medium">Date & Time</label>
               <input
                 type="datetime-local"
                 value={txDate}
@@ -261,13 +259,13 @@ export default function BuyerDashboard() {
             </div>
             {/* Payment method selector */}
             <div>
-              <label className="block text-sm font-medium">Payment Method</label>
               <select
                 value={txMethod}
                 onChange={e => setTxMethod(e.target.value as any)}
                 className="mt-1 block w-full border rounded p-2"
                 required
               >
+                <option value="">Select Payment Method</option>
                 <option value="bank transfer">Bank Transfer</option>
                 <option value="cash">Cash</option>
               </select>
@@ -281,7 +279,7 @@ export default function BuyerDashboard() {
             <button
               type="submit"
               disabled={txLoading}
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+              className="px-4 py-2 rounded disabled:opacity-50 btn btn-secondary"
             >
               {txLoading ? 'Recording…' : 'Record Transaction'}
             </button>

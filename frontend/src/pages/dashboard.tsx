@@ -18,7 +18,7 @@ export default function DashboardPage() {
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        Loading…
+        Welcome
       </div>
     )
   }
