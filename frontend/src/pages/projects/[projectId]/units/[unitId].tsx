@@ -2,7 +2,7 @@
 // React component for displaying detailed information about a single unit.
 // - Accessible to admin, builder, and buyer roles.
 // - Fetches unit data, booking, and transaction details based on user role.
-// - Allows builders to match payments for unpaid bookings.
+// - Allows builders to book available units and match payments for unpaid bookings.
 
 import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
@@ -52,11 +52,35 @@ export default function UnitDetail() {
 
   const prefix = getPrefix(user?.role ?? '')
 
-  // Local state for unit, booking, transactions, and status
-  const [unit,    setUnit]   = useState<Unit   | null>(null)
-  const [booking,setBooking] = useState<Booking| null>(null)
-  const [txs,     setTxs]    = useState<Tx     []>([])
-  const [status,  setStatus] = useState<'Available'|'Unpaid'|'Paid'>('Available')
+  // Local state for unit, booking, transactions, status, and loading
+  const [unit, setUnit] = useState<Unit | null>(null)
+  const [booking, setBooking] = useState<Booking | null>(null)
+  const [txs, setTxs] = useState<Tx[]>([])
+  const [status, setStatus] = useState<'Available'|'Unpaid'|'Paid'>('Available')
+  const [bookingLoading, setBookingLoading] = useState(false)
+
+  // Handle booking the unit (builders only)
+  async function handleBook() {
+    setBookingLoading(true)
+    try {
+      await api.post(`${prefix}/${projectId}/units/${unitId}/book`)
+      // Refresh booking data for this unit
+      const bookingsEndpoint =
+        user?.role === 'admin'   ? '/admin/bookings'
+      : user?.role === 'builder' ? '/builder/bookings'
+      : '/buyer/bookings'
+      const res = await api.get(bookingsEndpoint)
+      const b = (res.data.bookings as Booking[]).find(
+        b => b.unit_id === Number(unitId)
+      )
+      setBooking(b || null)
+    } catch (err: any) {
+      console.error(err)
+      alert(err.response?.data?.message || 'Booking failed')
+    } finally {
+      setBookingLoading(false)
+    }
+  }
 
   useEffect(() => {
     // Wait until query params and user.role are available
@@ -71,10 +95,11 @@ export default function UnitDetail() {
       })
       .catch(console.error)
 
-    // 2) Fetch bookings; admin sees all, others see only own bookings
-    const bookingsEndpoint = user?.role === 'admin'
-      ? '/admin/bookings'
-      : '/buyer/bookings'
+    // 2) Fetch bookings; admin, builder, buyer each get their own endpoint
+    const bookingsEndpoint =
+      user?.role === 'admin'   ? '/admin/bookings'
+    : user?.role === 'builder' ? '/builder/bookings'
+    : '/buyer/bookings'
 
     api.get(bookingsEndpoint)
       .then(res => {
@@ -85,10 +110,11 @@ export default function UnitDetail() {
       })
       .catch(() => setBooking(null))
 
-    // 3) Fetch transactions; admin sees all, builders see their own
-    const txEndpoint = user?.role === 'admin'
-      ? '/admin/transactions'
-      : '/builder/transactions'
+    // 3) Fetch transactions; admin, builder, buyer each get their own endpoint
+    const txEndpoint =
+      user?.role === 'admin'    ? '/admin/transactions'
+    : user?.role === 'builder'  ? '/builder/transactions'
+    : '/buyer/transactions'
 
     api.get(txEndpoint)
       .then(res => setTxs(res.data.transactions as Tx[]))
@@ -100,7 +126,7 @@ export default function UnitDetail() {
     if (!booking) {
       setStatus('Available')
     } else {
-      const paid = txs.some(t => t.booking_id === booking.id)
+      const paid = (txs ?? []).some(t => t.booking_id === booking.id)
       setStatus(paid ? 'Paid' : 'Unpaid')
     }
   }, [booking, txs])
@@ -135,7 +161,7 @@ export default function UnitDetail() {
 
         {/* Booking details, shown if a booking exists */}
         {booking && (
-          <div className="bg-green-50 p-4 rounded space-y-1">
+          <div className="p-4 rounded space-y-1">
             <h2 className="font-semibold">Booking Details</h2>
             <p><strong>ID:</strong> {booking.id}</p>
             <p><strong>Buyer:</strong> {booking.buyer_name}</p>
@@ -144,9 +170,26 @@ export default function UnitDetail() {
           </div>
         )}
 
+        {/* Builder “Book Unit” action if still available */}
+        {user?.role === 'builder' && !booking && (
+          <div className="p-4rounded space-y-2">
+            <p className="font-medium">This unit is still available.</p>
+            <button
+              onClick={handleBook}
+              disabled={bookingLoading}
+              className="px-4 py-2 rounded btn btn-secondary disabled:opacity-50"
+            >
+              {bookingLoading ? 'Booking…' : 'Book this unit'}
+            </button>
+          </div>
+        )}
+
         {/* If user is a builder and booking is unpaid, show match form */}
         {user?.role === 'builder' && booking && status === 'Unpaid' && (
-          <MatchForm bookingId={booking.id} />
+          <MatchForm 
+            bookingId={booking.id} 
+            onMatchSuccess={() => setStatus('Paid')}
+          />
         )}
       </div>
     </ProtectedRoute>
@@ -154,7 +197,7 @@ export default function UnitDetail() {
 }
 
 // MatchForm component allows builder to enter a transaction ID to match payment
-function MatchForm({ bookingId }: { bookingId: number }) {
+function MatchForm({ bookingId, onMatchSuccess, }: { bookingId: number; onMatchSuccess: () => void }) {
   const [txId, setTxId]       = useState<string>('')
   const [loading, setLoading] = useState(false)
 
@@ -165,28 +208,32 @@ function MatchForm({ bookingId }: { bookingId: number }) {
       transaction_id: Number(txId),
       booking_id: bookingId,
     })
-      .then(() => window.location.reload())
+      .then(() => {
+        onMatchSuccess()
+      })
       .catch(err => alert(err.response?.data?.message || 'Match failed'))
       .finally(() => setLoading(false))
   }
 
   return (
-    <div className="space-y-2 p-4 bg-yellow-50 rounded">
+    <div className="flex flex-col gap-2 p-4 rounded">
       <h3 className="font-semibold">Match Payment</h3>
-      <input
-        type="number"
-        placeholder="Transaction ID"
-        value={txId}
-        onChange={e => setTxId(e.target.value)}
-        className="border rounded px-2 py-1 mr-2"
-      />
-      <button
-        onClick={handleMatch}
-        disabled={loading}
-        className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 disabled:opacity-50"
-      >
-        {loading ? 'Matching…' : 'Match'}
-      </button>
+      <div className='flex flex-row gap-4'>
+        <input
+          type="number"
+          placeholder="Transaction ID"
+          value={txId}
+          onChange={e => setTxId(e.target.value)}
+          className="border rounded px-2 py-1 mr-2"
+        />
+        <button
+          onClick={handleMatch}
+          disabled={loading}
+          className="btn btn-secondary px-3 py-1 rounded disabled:opacity-50"
+        >
+          {loading ? 'Matching…' : 'Match'}
+        </button>
+      </div>
     </div>
   )
 }

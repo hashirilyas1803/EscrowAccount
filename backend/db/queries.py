@@ -370,7 +370,7 @@ def fetch_transactions_by_builder(builder_id):
         conn.close()
 
 
-def fetch_transactions_by_buyer_id(buyer_id):
+def fetch_transactions():
     """
     Fetch all transactions for a buyer's bookings.
     Returns list of dicts.
@@ -382,10 +382,8 @@ def fetch_transactions_by_buyer_id(buyer_id):
             "SELECT t.id AS id, t.amount, t.booking_id,"
             " u.id AS unit_id"
             " FROM Transaction_log AS t"
-            " JOIN Unit AS u ON t.unit_id = u.id"
-            " JOIN Booking AS b ON u.id = b.unit_id"
-            " WHERE b.buyer_id = ?",
-            (buyer_id,)
+            " LEFT JOIN Unit AS u ON t.unit_id = u.id"
+            " LEFT JOIN Booking AS b ON u.id = b.unit_id"
         )
         rows = cursor.fetchall()
         return [dict(row) for row in rows]

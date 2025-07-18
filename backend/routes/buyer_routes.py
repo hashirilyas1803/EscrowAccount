@@ -6,7 +6,7 @@ from backend.services.builder_services import get_project_details, get_project_u
 from backend.services.buyer_services import (
     create_booking_service,
     get_my_bookings,
-    get_my_transactions,
+    get_transactions,
     make_transaction_service
 )
 
@@ -130,4 +130,4 @@ def list_my_transactions():
     if 'buyer_id' not in session:
         return jsonify({'status': 'failure', 'message': 'Unauthorized'}), 403
 
-    return get_my_transactions(session['buyer_id'])
+    return get_transactions(session['buyer_id'])

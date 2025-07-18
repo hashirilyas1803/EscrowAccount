@@ -183,7 +183,7 @@ export default function BuilderDashboard() {
               {/* Button to trigger match action */}
               <button
                 onClick={() => handleMatch(tx.id)}
-                className="mt-2 sm:mt-0 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                className="mt-2 sm:mt-0 px-4 py-2 rounded btn btn-secondary"
               >
                 Match
               </button>
@@ -199,7 +199,7 @@ export default function BuilderDashboard() {
           ) : (
             <ul className="space-y-2">
               {matched.map(tx => (
-                <li key={tx.id} className="p-4 bg-green-50 rounded shadow">
+                <li key={tx.id} className="p-4 rounded shadow">
                   <div>ID: {tx.id}</div>
                   <div>Amount: ${tx.amount}</div>
                   <div>Booking ID: {tx.booking_id}</div>

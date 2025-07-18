@@ -6,9 +6,8 @@ from backend.db.queries import (
     create_booking,
     fetch_bookings_by_buyer_id,
     create_transaction,
-    get_unit_by_internal_id,
     get_unit_internal_id_by_unit_code,
-    fetch_transactions_by_buyer_id
+    fetch_transactions
 )
 
 def create_booking_service(buyer_id, unit_id, amount, date):
@@ -79,10 +78,10 @@ def make_transaction_service(amount, date, payment_type, unit_number):
     # Insertion failed
     return jsonify({'status': 'failure', 'message': 'Transaction failed'}), 400
 
-def get_my_transactions(buyer_id):
+def get_transactions(buyer_id):
     """
     Fetch all transactions made by a buyer.
     Returns JSON list of transactions.
     """
-    transactions = fetch_transactions_by_buyer_id(buyer_id)
+    transactions = fetch_transactions()
     return jsonify({'status': 'success', 'transactions': transactions}), 200

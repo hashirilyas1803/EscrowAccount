@@ -17,8 +17,8 @@ export default function DashboardPage() {
   // Show loading placeholder until user information is available
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        Welcome
+      <div className="flex items-center justify-center">
+        <h1 className='text-secondary'>Welcome</h1>
       </div>
     )
   }

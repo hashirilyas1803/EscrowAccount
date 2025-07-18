@@ -21,16 +21,16 @@ interface Booking {
   id: number
   project_id: number
   project_name: string
-  unit_id: number      // internal ID
-  unit_number: string  // public-facing code
+  unit_id: number
+  buyer_id: number
+  unit_number: string
   amount: number
   date: string
 }
 
 interface Transaction {
   id: number
-  unit_number: string
-  unit_id: number      // internal unit ID
+  unit_id: number
   booking_id: number
   amount: number
   date: string
@@ -84,7 +84,7 @@ export default function BuyerDashboard() {
     api.get('/buyer/transactions')
        .then(r => setTransactions(r.data.transactions))
        .catch(console.error)
-  }, [user]) // re-run if user changes
+  }, [user])
 
   // 2️⃣ Once projects are loaded, fetch all units for each project
   useEffect(() => {
@@ -114,8 +114,8 @@ export default function BuyerDashboard() {
   // Build options for transaction dropdown: available or your booked units not yet paid
   const eligibleUnits = allUnits
     .filter(u =>
-      !u.booked ||
-      (bookedByYou.has(u.id) && !paidUnits.has(u.id))
+      (!u.booked ||
+      bookedByYou.has(u.id)) && !paidUnits.has(u.id)
     )
     .map(u => ({
       value: u.unit_id,
@@ -219,27 +219,43 @@ export default function BuyerDashboard() {
         {/* Make a Payment section */}
         <section>
           <h2 className="text-xl font-semibold mb-4">Make a Payment</h2>
-          <form onSubmit={handleTransaction} className="flex flex-col gap-4 w-1/2 p-6 rounded shadow">
+          <form
+            onSubmit={handleTransaction}
+            className="flex flex-col gap-4 w-1/2 p-6 rounded shadow"
+          >
             {/* Unit dropdown */}
             <div>
+              <label htmlFor="txUnit" className="block text-sm font-medium mb-1">
+                Unit
+              </label>
               <select
+                id="txUnit"
                 value={txUnit}
                 onChange={e => setTxUnit(e.target.value)}
                 className="mt-1 block w-full border rounded p-2"
                 required
               >
-                <option value="">Select Unit</option>
+                <option value="" disabled hidden>
+                  Select Unit…
+                </option>
                 {eligibleUnits.map(o => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
                 ))}
               </select>
             </div>
+
             {/* Amount input */}
             <div>
+              <label htmlFor="txAmount" className="block text-sm font-medium mb-1">
+                Amount
+              </label>
               <input
+                id="txAmount"
                 type="number"
                 value={txAmount}
-                placeholder='Amount'
+                placeholder="Amount"
                 onChange={e => setTxAmount(e.target.value)}
                 className="mt-1 block w-full border rounded p-2"
                 min="0.01"
@@ -247,9 +263,14 @@ export default function BuyerDashboard() {
                 required
               />
             </div>
+
             {/* Date/time picker */}
             <div>
+              <label htmlFor="txDate" className="block text-sm font-medium mb-1">
+                Transaction Date &amp; Time
+              </label>
               <input
+                id="txDate"
                 type="datetime-local"
                 value={txDate}
                 onChange={e => setTxDate(e.target.value)}
@@ -257,22 +278,29 @@ export default function BuyerDashboard() {
                 required
               />
             </div>
+
             {/* Payment method selector */}
             <div>
+              <label htmlFor="txMethod" className="block text-sm font-medium mb-1">
+                Payment Method
+              </label>
               <select
+                id="txMethod"
                 value={txMethod}
                 onChange={e => setTxMethod(e.target.value as any)}
                 className="mt-1 block w-full border rounded p-2"
                 required
               >
-                <option value="">Select Payment Method</option>
+                <option value="" disabled hidden>
+                  Select Method…
+                </option>
                 <option value="bank transfer">Bank Transfer</option>
                 <option value="cash">Cash</option>
               </select>
             </div>
 
-            {/* Display form-level messages */}
-            {txError   && <p className="text-red-600 text-sm">{txError}</p>}
+            {/* Form messages */}
+            {txError && <p className="text-red-600 text-sm">{txError}</p>}
             {txSuccess && <p className="text-green-600 text-sm">{txSuccess}</p>}
 
             {/* Submit button */}

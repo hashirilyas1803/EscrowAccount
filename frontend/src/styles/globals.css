@@ -3,7 +3,6 @@
   They inject the base styles, component classes, and utility classes
   into the application's global stylesheet.
 */
-@import "bootstrap/dist/css/bootstrap.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
