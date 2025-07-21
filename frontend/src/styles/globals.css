@@ -2,10 +2,13 @@
   These are the core Tailwind CSS directives.
   They inject the base styles, component classes, and utility classes
   into the application's global stylesheet.
-*/
+*/  
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Apply a Google Font */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
 
 body {
   background-color: #212529;
@@ -13,10 +16,36 @@ body {
   font-family: ui-sans-serif, system-ui, -apple-system;
 }
 
+/* Link styles */
 a {
   text-decoration: none;
   color: inherit;
 }
 a:hover {
   text-decoration: underline;
+}
+
+h1, h2, h3 {
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  margin-bottom: 1rem;
+}
+h1 {
+  font-size: 2.5rem;
+  color: #00b4d8;
+}
+h2 {
+  font-size: 2rem;
+  color: #4dd0e1;
+}
+h3 {
+  font-size: 1.5rem;
+  color: #81ecec;
+}
+
+/* Paragraphs */
+p {
+  line-height: 1.6;
+  margin-bottom: 1rem;
+  font-size: 1rem;
 }

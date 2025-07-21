@@ -8,6 +8,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
 import api from '@/lib/api'
+import { useAuth } from '@/context/AuthContext'
+import { register } from 'module'
 
 // Define possible user roles
 type Role = 'builder' | 'admin' | 'buyer'
@@ -15,6 +17,7 @@ type Role = 'builder' | 'admin' | 'buyer'
 export default function RegisterPage() {
   const router = useRouter()
   const [role, setRole] = useState<Role>('builder')   // Selected role
+  const { register, register_buyer } = useAuth()
 
   // Shared form fields
   const [name, setName]       = useState('')
@@ -31,26 +34,12 @@ export default function RegisterPage() {
     e.preventDefault()
     setError(null)
     try {
-      if (role === 'buyer') {
-        // Buyer registration endpoint
-        await api.post('/buyer/auth/register', {
-          name,
-          emirates_id,
-          phone_number,
-          email,
-          password,
-        })
-      } else {
-        // Builder or admin registration endpoint
-        await api.post('/auth/register', {
-          name,
-          email,
-          password,
-          role,
-        })
-      }
-      // On success, navigate to login page
-      router.push('/login')
+      if (role === 'buyer')
+        register_buyer(name, emirates_id, phone_number, email, password, role)
+      else
+        register(name, email, password, role)
+      // On success, navigate to the dashboard
+      router.push('/dashboard')
     } catch (err: any) {
       // Display API error or fallback
       setError(err.response?.data?.message || 'Registration failed')
@@ -58,7 +47,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+    <div className="min-h-screen flex items-center justify-center">
       <form
         onSubmit={handleSubmit}
         className="p-8 rounded shadow-md w-1/2 flex flex-col gap-4"
@@ -146,7 +135,7 @@ export default function RegisterPage() {
         {/* Submit button */}
         <button
           type="submit"
-          className="w-full bg-primary-subtle text-dark py-2 rounded hover:bg-indigo-700"
+          className="w-full bg-primary-subtle text-dark py-2 rounded hover:bg-primary-emphasis"
         >
           Create Account
         </button>
@@ -154,7 +143,7 @@ export default function RegisterPage() {
         {/* Link to login page if already have an account */}
         <p className="text-center text-sm">
           Already have an account?{' '}
-          <Link href="/login" className="text-indigo-600 hover:underline">
+          <Link href="/login" className="hover:underline">
             Sign in here
           </Link>
         </p>

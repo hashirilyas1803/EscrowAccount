@@ -142,10 +142,10 @@ export default function UnitDetail() {
           Unit {unit.number}{' '}
           <span className={
             status === 'Available'
-              ? 'text-green-600'
+              ? 'text-warning'
               : status === 'Paid'
-              ? 'text-blue-600'
-              : 'text-yellow-700'
+              ? 'text-success'
+              : 'text-danger'
           }>
             ({status})
           </span>
@@ -170,14 +170,14 @@ export default function UnitDetail() {
           </div>
         )}
 
-        {/* Builder “Book Unit” action if still available */}
-        {user?.role === 'builder' && !booking && (
+        {/* Buyer “Book Unit” action if still available */}
+        {user?.role === 'buyer' && !booking && (
           <div className="p-4rounded space-y-2">
             <p className="font-medium">This unit is still available.</p>
             <button
               onClick={handleBook}
               disabled={bookingLoading}
-              className="px-4 py-2 rounded btn btn-secondary disabled:opacity-50"
+              className="px-4 py-2 rounded btn btn-success disabled:opacity-50"
             >
               {bookingLoading ? 'Booking…' : 'Book this unit'}
             </button>

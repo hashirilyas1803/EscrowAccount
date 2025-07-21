@@ -64,6 +64,37 @@ def create_unit(project_id, unit_id, floor, area, price):
     # Insertion failed
     return jsonify({'status': 'failure', 'message': 'Could not add unit'}), 400
 
+def create_unit_batch(project_id, prefix, units_per_floor, num_floors, area, price):
+    """
+    Add a new batch of unit under a specific project.
+    - Validates required fields.
+    - Inserts into units table with timestamp.
+    Returns JSON response with new unit row ID or error.
+    """
+    if not all([project_id, prefix, units_per_floor, num_floors, area, price]):
+        return jsonify({'status': 'failure', 'message': 'Missing required fields'}), 400
+
+    created_at = datetime.utcnow().isoformat()
+    unit_row_ids = []
+
+    for floor in range(1, num_floors + 1):
+        for unit in range(1, units_per_floor + 1):
+            row = insert_unit(project_id, f"{prefix}-{floor}{unit:02d}", floor, area, price, created_at)
+            if row is None:
+                continue
+            unit_row_ids.append(row)
+
+
+    if unit_row_ids:
+        return jsonify({
+            'status': 'success',
+            'message': 'Unit added successfully',
+            'unit_row_ids': unit_row_ids
+        }), 201
+
+    # Insertion failed
+    return jsonify({'status': 'failure', 'message': 'Could not add unit'}), 400
+
 
 def get_builder_projects(builder_id):
     """

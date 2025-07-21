@@ -20,7 +20,6 @@ interface Project {
 interface Booking {
   id: number
   project_id: number
-  project_name: string
   unit_id: number
   buyer_id: number
   unit_number: string
@@ -170,6 +169,23 @@ export default function BuyerDashboard() {
     }
   }
 
+  useEffect(() => {
+    if (txError || txSuccess) {
+      const timer = setTimeout(() => {
+        setTxError(null)
+        setTxSuccess(null)
+      }, 1500)
+
+      return () => clearTimeout(timer)
+    }
+  }, [txError, txSuccess])
+
+
+  // Lookup maps for quick access
+  const unitIdToUnit = new Map(allUnits.map(u => [u.unit_id, u])) 
+  const projectIdToName = new Map(projects.map(p => [p.id, p.name]))
+
+
   return (
     <ProtectedRoute roles={['buyer']}>
       <div className="space-y-12">
@@ -200,21 +216,27 @@ export default function BuyerDashboard() {
             <p>You have no bookings yet.</p>
           ) : (
             <ul className="space-y-4">
-              {bookings.map(b => (
-                <li key={b.id} className="p-4 rounded shadow">
-                  <div><strong>Project:</strong> {b.project_name}</div>
-                  <div><strong>Unit:</strong> {b.unit_number}</div>
-                  <div><strong>Amount:</strong> ${b.amount}</div>
-                  <div><strong>Date:</strong> {b.date}</div>
-                  <div>
-                    <strong>Status:</strong>{' '}
-                    {matchedUnits.has(b.unit_id) ? 'Paid' : 'Unpaid'}
-                  </div>
-                </li>
-              ))}
+              {bookings.map(b => {
+                const unit = unitIdToUnit.get(b.unit_number)
+                const projectName = unit ? projectIdToName.get(unit.project_id) : 'Unknown Project'
+
+                return (
+                  <li key={b.id} className="p-4 rounded shadow">
+                    <div><strong>Project:</strong> {projectName}</div>
+                    <div><strong>Unit:</strong> {b.unit_number}</div>
+                    <div><strong>Amount:</strong> ${b.amount}</div>
+                    <div><strong>Date:</strong> {b.date}</div>
+                    <div>
+                      <strong>Status:</strong>{' '}
+                      {matchedUnits.has(b.unit_id) ? 'Paid' : 'Unpaid'}
+                    </div>
+                  </li>
+                )
+              })}
             </ul>
           )}
         </section>
+
 
         {/* Make a Payment section */}
         <section>
@@ -300,8 +322,8 @@ export default function BuyerDashboard() {
             </div>
 
             {/* Form messages */}
-            {txError && <p className="text-red-600 text-sm">{txError}</p>}
-            {txSuccess && <p className="text-green-600 text-sm">{txSuccess}</p>}
+            {txError && <p className="text-danger text-sm">{txError}</p>}
+            {txSuccess && <p className="text-success text-sm">{txSuccess}</p>}
 
             {/* Submit button */}
             <button

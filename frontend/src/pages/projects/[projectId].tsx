@@ -37,6 +37,11 @@ export default function ProjectDetail() {
   // Local state for project info and units
   const [project, setProject] = useState<Project | null>(null)
   const [units, setUnits]     = useState<Unit[]>([])
+  
+  const [multi, setMulti] = useState(false)
+  const [selected, setSelected] = useState<number[]>([])
+  const [filter, setFilter] = useState<'all' | 'booked' | 'available'>('all')
+
 
   // State for buyer booking form inline
   const [bookingFormFor, setBookingFormFor] = useState<number | null>(null)
@@ -97,6 +102,49 @@ export default function ProjectDetail() {
     }
   }
 
+  const submitMultipleBookings = async (unitsToBook: Unit[]) => {
+    setBookingError(null)
+    setLoadingBooking(true)
+    try {
+      // Validate all units first
+      for (const unit of unitsToBook) {
+        if (unit.booked) {
+          throw new Error(`Unit ${unit.unit_id} is already booked.`)
+        }
+      }
+
+      // Make all booking calls in parallel
+      await Promise.all(
+        unitsToBook.map(unit =>
+          api.post('/buyer/bookings', {
+            unit_id: unit.unit_id,
+            booking_amount: unit.price,
+            payment_method: methodInput,
+            booking_date: new Date().toISOString(),
+          })
+        )
+      )
+
+    // After all bookings, refresh the unit list once
+    const updated = await api.get(`${prefix}/${projectId}/units`)
+      setUnits(updated.data.units)
+      setSelected([])
+      setMulti(false)
+    } catch (err: any) {
+      setBookingError(err.response?.data?.message || err.message || 'Booking failed')
+    } finally {
+      setLoadingBooking(false)
+    }
+  }
+
+  const filteredUnits = units.filter(u =>
+    filter === 'all' ? true :
+    filter === 'booked' ? u.booked :
+    !u.booked
+  )
+
+
+
   return (
     <ProtectedRoute roles={['builder','buyer','admin']}>
       <div className="space-y-6 p-6">
@@ -107,27 +155,98 @@ export default function ProjectDetail() {
 
         {/* Units section with conditional actions */}
         <div className="flex justify-between items-center">
-          <h2 className="text-xl font-semibold">Units</h2>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <h2 className="text-xl font-semibold">Units</h2>
+
+            <div className="flex items-center gap-2">
+              <span className="text-sm">Show:</span>
+              {['all', 'available', 'booked'].map(status => (
+                <button
+                  key={status}
+                  onClick={() => setFilter(status as 'all' | 'booked' | 'available')}
+                  className={`px-2 py-1 rounded text-sm btn 
+                    ${filter === status ? 'btn-primary' : 'btn-outline-secondary'}`}
+                >
+                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
           {/* Builders can add new units */}
           {user?.role === 'builder' && (
-            <Link
-              href={`/projects/${project.id}/units/new`}
-              className="px-3 py-1 rounded"
-            >
-              + Add Unit
-            </Link>
+            <div className='flex flex-row gap-4'>
+              <Link
+                href={`/projects/${project.id}/units/new`}
+                className="px-3 py-1 rounded btn btn-secondary"
+              >
+                Add Unit
+              </Link>
+              <Link
+                href={`/projects/${project.id}/units/new_batch`}
+                className="px-3 py-1 rounded btn btn-secondary"
+              >
+                Add Multiple Units
+              </Link>
+            </div>
+          )}
+          {/*Buyers can book multiple units*/}
+          {user?.role === 'buyer' && (
+            <div className='flex flex-row gap-4 items-center'>
+              <button
+                onClick={() => {
+                  setMulti(!multi)
+                  setSelected([])
+                }}
+                className={`hover:underline rounded btn ${multi ? 'btn-danger' : 'btn-success'}`}
+              >
+                {multi ? 'Cancel' : 'Book Multiple Units'}
+              </button>
+              <div className="text-right text-lg font-medium">
+                Total: $
+                {selected
+                  .map(id => units.find(u => u.id === id)?.price ?? 0)
+                  .reduce((sum, p) => sum + p, 0)
+                  .toLocaleString()}
+              </div>
+              {multi && (
+                <button
+                  onClick={async () => {
+                    if (selected.length === 0) return alert('Pick at least one unit')
+                    const selectedUnits = units.filter(u => selected.includes(u.id))
+                    await submitMultipleBookings(selectedUnits)
+                  }}
+                  className="btn btn-success rounded disabled:opacity-50"
+                >
+                  Book {selected.length} Unit{selected.length > 1 ? 's' : ''}
+                </button>
+              )}
+            </div>
           )}
         </div>
 
         <ul className="space-y-4">
-          {units.map(u => (
+          {filteredUnits.map(u => (
             <li key={u.id} className="rounded shadow p-4 space-y-3">
               {user?.role === 'buyer' ? (
                 // Buyer sees detailed unit info and can book if available
                 <>
+                  {(multi && !u.booked) && (
+                   <input
+                     type="checkbox"
+                     className="form-check-input mt-0"
+                     checked={selected.includes(u.id)}
+                     onChange={e => {
+                       if (e.target.checked) {
+                         setSelected([...selected, u.id])
+                       } else {
+                         setSelected(selected.filter(id => id !== u.id))
+                       }
+                     }}
+                   />
+                 )}
                   <div className="flex justify-between items-center">
                     <div className="text-lg font-medium">Unit {u.unit_id}</div>
-                    <div className={u.booked ? 'text-red-600' : 'text-green-600'}>
+                    <div className={u.booked ? 'text-danger' : 'text-success'}>
                       {u.booked ? 'Booked' : 'Available'}
                     </div>
                   </div>
@@ -155,20 +274,20 @@ export default function ProjectDetail() {
                         </div>
                         {/* Error message */}
                         {bookingError && (
-                          <p className="text-red-500 text-sm">{bookingError}</p>
+                          <p className="text-danger text-sm">{bookingError}</p>
                         )}
                         {/* Confirm/Cancel buttons */}
                         <div className="flex flex-row gap-2">
                           <button
                             onClick={() => submitBooking(u)}
                             disabled={loadingBooking}
-                            className="px-3 py-1 rounded btn btn-secondary"
+                            className="px-3 py-1 rounded btn btn-success"
                           >
                             {loadingBooking ? 'Booking…' : 'Confirm'}
                           </button>
                           <button
                             onClick={() => setBookingFormFor(null)}
-                            className="px-3 py-1 rounded border btn btn-secondary"
+                            className="px-3 py-1 rounded border btn btn-danger"
                           >Cancel</button>
                         </div>
                       </div>
@@ -179,7 +298,7 @@ export default function ProjectDetail() {
                           setAmountInput(u.price.toString())
                           setBookingError(null)
                         }}
-                        className="px-3 py-1 rounded btn btn-secondary"
+                        className="px-3 py-1 rounded btn btn-success"
                       >Book this unit</button>
                     )
                   )}
@@ -191,12 +310,15 @@ export default function ProjectDetail() {
                     <div className="font-medium">Unit {u.unit_id}</div>
                     <div className="text-sm">
                       Floor {u.floor} · {u.area} sqft · ${u.price}{' '}
-                      {u.booked && <span className="text-green-600">(Booked)</span>}
+                      {u.booked 
+                        ? <span className="text-success">(Booked)</span>
+                        : <span className="text-danger">(Available)</span>
+                      }
                     </div>
                   </div>
                   <Link
                     href={`/projects/${project.id}/units/${u.id}`}
-                    className="hover:underline"
+                    className="hover:underline btn btn-secondary"
                   >Details</Link>
                 </div>
               )}

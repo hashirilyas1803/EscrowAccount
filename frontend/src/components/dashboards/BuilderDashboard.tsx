@@ -128,9 +128,9 @@ export default function BuilderDashboard() {
             <h2 className="text-2xl font-semibold">Your Projects</h2>
             <Link
               href="/projects/new"
-              className="px-4 py-2 rounded"
+              className="px-4 py-2 rounded btn btn-secondary"
             >
-              + Add Project
+              Add Project
             </Link>
           </div>
           {projects.length === 0 ? (

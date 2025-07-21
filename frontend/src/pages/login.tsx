@@ -40,7 +40,7 @@ export default function LoginPage() {
       >
         <h2 className="text-xl font-semibold text-center">Sign In</h2>
         {/* Display login error if present */}
-        {error && <p className="text-red-500 text-sm">{error}</p>}
+        {error && <p className="text-danger text-sm">{error}</p>}
 
         {/* Role selection dropdown */}
         <div>
@@ -82,7 +82,7 @@ export default function LoginPage() {
         {/* Submit button */}
         <button
           type="submit"
-          className="w-full bg-primary-subtle text-dark py-2 rounded hover:bg-indigo-700"
+          className="w-full bg-primary-subtle text-dark py-2 rounded hover:bg-primary-emphasis"
         >
           Login
         </button>
@@ -90,7 +90,7 @@ export default function LoginPage() {
         {/* Link to registration page */}
         <p className="text-center text-sm mt-4">
           Don’t have an account?{' '}
-          <Link href="/register" className="text-indigo-600 hover:underline">
+          <Link href="/register" className="hover:underline">
             Register here
           </Link>
         </p>

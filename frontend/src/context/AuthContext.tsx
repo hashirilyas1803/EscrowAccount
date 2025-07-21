@@ -3,7 +3,7 @@
 // - Manages current user info (id, name, role).
 // - Provides login/logout functions with role-based endpoints.
 
-import React, { createContext, useContext, ReactNode, useState } from 'react'
+import React, { createContext, useContext, ReactNode, useState, useEffect } from 'react'
 import api from '@/lib/api'
 
 // Define possible user roles
@@ -24,6 +24,20 @@ interface AuthContextType {
     password: string,
     role: Role
   ) => Promise<void>            // Function to authenticate and set user
+  register: (
+    name: string,
+    email: string,
+    password: string,
+    role: Role
+  ) => Promise<void>
+  register_buyer: (
+    name: string,
+    emirates_id: string,
+    phone_number: string,
+    email: string,
+    password: string,
+    role: Role
+  ) => Promise<void>
   logout: () => Promise<void>  // Function to clear session and user
 }
 
@@ -35,18 +49,58 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Local state for the authenticated user
   const [user, setUser] = useState<User | null>(null)
 
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user')
+    if (storedUser) {
+      setUser(JSON.parse(storedUser))
+    }
+  }, [])
+
+
+
   // Login function: selects endpoint based on role
   const login = async (email: string, password: string, role: Role) => {
     if (role === 'buyer') {
       // Buyer-specific login API
       const res = await api.post('/buyer/auth/login', { email, password })
-      setUser({ id: res.data.buyer_id, name: res.data.name, role: 'buyer' })
+      const newUser = { id: res.data.buyer_id, name: res.data.name, role: 'buyer' as Role}
+      setUser(newUser)
+      localStorage.setItem('user', JSON.stringify(newUser))
     } else {
       // Builder or Admin login API
       const res = await api.post('/auth/login', { email, password, role })
-      setUser({ id: res.data.user_id, name: res.data.name, role: res.data.role })
+      const newUser = { id: res.data.user_id, name: res.data.name, role: res.data.role }
+      setUser(newUser)
+      localStorage.setItem('user', JSON.stringify(newUser))
     }
   }
+
+  const register_buyer = async (name: string, emirates_id: string, phone_number: string, email: string, password: string, role: Role) => {
+    // Buyer registration endpoint
+    const res = await api.post('/buyer/auth/register', {
+      name,
+      emirates_id,
+      phone_number,
+      email,
+      password,
+    })
+    const newUser = { id: res.data.buyer_id, name: res.data.name, role: 'buyer' as Role}
+    setUser(newUser)
+    localStorage.setItem('user', JSON.stringify(newUser))
+  }
+
+  const register = async(name: string, email: string, password: string, role: Role) => {
+    // Builder or admin registration endpoint
+    const res = await api.post('/auth/register', {
+      name,
+      email,
+      password,
+      role,
+    })
+    const newUser = { id: res.data.user_id, name: res.data.name, role: res.data.role }
+    setUser(newUser)
+    localStorage.setItem('user', JSON.stringify(newUser))
+  } 
 
   // Logout function: calls appropriate endpoint and clears user state
   const logout = async () => {
@@ -55,12 +109,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } else {
       await api.post('/auth/logout')
     }
+    localStorage.removeItem('user')
     setUser(null)
   }
 
+
   // Provide user and auth actions to descendants
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, register, register_buyer, logout }}>
       {children}
     </AuthContext.Provider>
   )

@@ -9,7 +9,7 @@ export default function Navbar() {
   const { user, logout } = useAuth()
 
   return (
-    <nav className="p-3 mb-2 bg-dark text-dark-emphasis">
+    <nav className="p-3 bg-dark">
       <div className="max-w-7xl mx-auto px-4 py-2 flex justify-between items-center">
         {/* Site logo/name linking back to home */}
         <Link href="/" className="text-2xl font-bold">
@@ -24,7 +24,7 @@ export default function Navbar() {
               <span className="capitalize">{user.name}</span>
               <button
                 onClick={logout}
-                className="px-3 py-1 rounded btn btn-secondary"
+                className="px-3 py-1 rounded btn btn-danger"
               >
                 Logout
               </button>

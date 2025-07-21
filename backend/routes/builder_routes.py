@@ -5,6 +5,7 @@ from datetime import datetime
 from backend.services.builder_services import (
     create_project,
     create_unit,
+    create_unit_batch,
     get_builder_projects,
     get_project_units,
     get_dashboard_metrics,
@@ -68,6 +69,27 @@ def create_new_unit(project_id):
         project_id,
         data.get('unit_id'),
         data.get('floor'),
+        data.get('area'),
+        data.get('price')
+    )
+@builder_blueprint.route('/projects/<int:project_id>/units/batch', methods=['POST'])
+def create_new_unit_batch(project_id):
+    """
+    POST /builder/projects/<project_id>/units
+    Add a new unit to a specific project.
+    Expects JSON with 'unit_id', 'floor', 'area', and 'price'.
+    """
+    # Auth check: only the owning builder can add units
+    if 'user_id' not in session or session.get('role') != 'builder':
+        return jsonify({'status': 'failure', 'message': 'Unauthorized'}), 403
+
+    data = request.json
+    # Delegate unit creation to service layer
+    return create_unit_batch(
+        project_id,
+        data.get('prefix'),
+        data.get('units_per_floor'),
+        data.get('num_floors'),
         data.get('area'),
         data.get('price')
     )

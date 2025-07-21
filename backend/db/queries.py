@@ -281,10 +281,11 @@ def fetch_all_bookings():
     cursor = conn.cursor()
     try:
         cursor.execute(
-            "SELECT Booking.*, Buyer.name AS buyer_name, Unit.unit_id AS unit_number"
+            "SELECT Booking.*, Buyer.name AS buyer_name, Unit.unit_id AS unit_number, Project.name AS project_name"
             " FROM Booking"
             " JOIN Buyer ON Booking.buyer_id = Buyer.id"
             " JOIN Unit ON Booking.unit_id = Unit.id"
+            " JOIN Project ON Project.id = Unit.project_id"
         )
         rows = cursor.fetchall()
         return [dict(row) for row in rows]
