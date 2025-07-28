@@ -25,7 +25,7 @@ export default function NewProjectPage() {
     setError(null)
 
     // Basic validation: all text fields must be non-empty and units ≥ 1
-    if (!name.trim() || !loc.trim() || units === '' || units < 1) {
+    if (!name.trim() || !loc.trim()) {
       setError('All fields are required and number of units must be ≥ 1')
       return
     }
@@ -36,7 +36,7 @@ export default function NewProjectPage() {
       await api.post('/builder/projects', {
         name:     name.trim(),
         location: loc.trim(),
-        num_units: units,
+        // num_units: units,
       })
       // Redirect to the builder dashboard on success
       router.push('/dashboard')
@@ -89,7 +89,7 @@ export default function NewProjectPage() {
         </div>
 
         {/* Number of Units Input */}
-        <div>
+        {/* <div>
           <input
             id="projectUnits"
             type="number"
@@ -105,7 +105,7 @@ export default function NewProjectPage() {
             required
             className="mt-1 block w-full border rounded p-2"
           />
-        </div>
+        </div> */}
 
         {/* Submit button with disabled/loading state */}
         <button

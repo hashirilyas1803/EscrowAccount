@@ -51,23 +51,17 @@ def get_my_bookings(buyer_id):
     # Data retrieval error
     return jsonify({'status': 'failure', 'message': 'Could not fetch bookings'}), 500
 
-def make_transaction_service(amount, date, payment_type, unit_number):
+def make_transaction_service(amount, date, payment_type, buyer_id, unit_id):
     """
     Record a new payment transaction for a unit.
     - Resolves public unit code to internal ID.
     - Inserts transaction record with timestamp and payment details.
     Returns JSON response with transaction_id or error.
     """
-    # Lookup internal unit ID by unit code
-    unit_lookup = get_unit_internal_id_by_unit_code(unit_number)
-    if not unit_lookup:
-        return jsonify({'status': 'failure', 'message': 'Invalid unit ID'}), 400
-
-    unit_id = unit_lookup['id']
     created_at = datetime.utcnow().isoformat()
 
     # Delegate insertion to data layer
-    transaction_id = create_transaction(amount, date, payment_type, created_at, unit_id)
+    transaction_id = create_transaction(amount, date, payment_type, created_at, buyer_id, unit_id)
     if transaction_id:
         return jsonify({
             'status': 'success',

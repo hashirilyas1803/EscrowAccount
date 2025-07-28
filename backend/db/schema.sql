@@ -31,22 +31,23 @@ CREATE TABLE IF NOT EXISTS Project (
 );
 
 -- Unit Table
-CREATE TABLE IF NOT EXISTS Unit (
+CREATE TABLE Unit (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     project_id INTEGER NOT NULL,
-    unit_id INTEGER NOT NULL UNIQUE,
+    unit_id TEXT NOT NULL,
     floor INTEGER NOT NULL,
     area REAL NOT NULL,
     price REAL NOT NULL,
     created_at TEXT NOT NULL,
     booked INTEGER NOT NULL DEFAULT 0 CHECK (booked IN (0,1)),
-    FOREIGN KEY (project_id) REFERENCES Project(id) ON DELETE CASCADE
+    FOREIGN KEY (project_id) REFERENCES Project(id) ON DELETE CASCADE,
+    UNIQUE(project_id, unit_id)
 );
 
 -- Booking Table
 CREATE TABLE IF NOT EXISTS Booking (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    unit_id INTEGER NOT NULL UNIQUE,
+    unit_id INTEGER NOT NULL,
     buyer_id INTEGER NOT NULL,
     amount REAL NOT NULL,
     date TEXT NOT NULL,
@@ -56,14 +57,16 @@ CREATE TABLE IF NOT EXISTS Booking (
 );
 
 -- Transaction Table
-CREATE TABLE IF NOT EXISTS Transaction_log (
+CREATE TABLE Transaction_log (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     amount REAL NOT NULL,
     date TEXT NOT NULL,
-    unit_id INTEGER NOT NULL,
+    unit_id INTEGER NOT NULL UNIQUE,
     payment_method TEXT NOT NULL CHECK (payment_method IN ('cash', 'bank transfer')),
     booking_id INTEGER,
+    buyer_id INTEGER NOT NULL,
     created_at TEXT NOT NULL,
-    FOREIGN KEY (booking_id) REFERENCES Booking(id) ON DELETE SET NULL
-    FOREIGN KEY (unit_id) REFERENCES Unit(id) ON DELETE CASCADE
+    FOREIGN KEY (unit_id) REFERENCES Unit(id) ON DELETE CASCADE,
+    FOREIGN KEY (booking_id) REFERENCES Booking(id) ON DELETE SET NULL,
+    FOREIGN KEY (buyer_id) REFERENCES Buyer(id) ON DELETE SET NULL
 );

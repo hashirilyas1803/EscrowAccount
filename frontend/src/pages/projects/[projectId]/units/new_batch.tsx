@@ -42,7 +42,8 @@ export default function NewUnitBatchPage() {
       })
       router.back()
     } catch (e: any) {
-      setError(e.response?.data?.message || 'Failed to create units')
+      const errorMsg = e.response?.data?.message || 'Failed to create units'
+      router.push(`/projects/${projectId}?error=${encodeURIComponent(errorMsg)}`)
     } finally {
       setLoading(false)
     }

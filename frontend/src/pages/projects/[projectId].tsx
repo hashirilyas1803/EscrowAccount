@@ -42,19 +42,36 @@ export default function ProjectDetail() {
   const [selected, setSelected] = useState<number[]>([])
   const [filter, setFilter] = useState<'all' | 'booked' | 'available'>('all')
 
-
+  
   // State for buyer booking form inline
   const [bookingFormFor, setBookingFormFor] = useState<number | null>(null)
   const [amountInput, setAmountInput]       = useState<string>('')
   const [methodInput, setMethodInput]       = useState<'Cash'|'Bank Transfer'>('Bank Transfer')
   const [bookingError, setBookingError]     = useState<string|null>(null)
   const [loadingBooking, setLoadingBooking] = useState(false)
+  
+  const [error, setError] = useState<string | null>(null)
 
   // Determine API prefix for project routes based on role
   const prefix =
     user?.role === 'builder' ? '/builder/projects'
     : user?.role === 'buyer'  ? '/buyer/projects'
     : '/admin/projects'
+
+  useEffect(() => {
+    if (router.query.error) {
+      setError(decodeURIComponent(router.query.error as string))
+
+      // Clear the error message from the URL after a few seconds
+      const timer = setTimeout(() => {
+        setError(null)
+        const { error, ...rest } = router.query
+        router.replace({ pathname: router.pathname, query: rest }, undefined, { shallow: true })
+      }, 1500)
+
+      return () => clearTimeout(timer)
+    }
+  }, [router.query])
 
   useEffect(() => {
     if (!projectId) return
@@ -136,6 +153,8 @@ export default function ProjectDetail() {
       setLoadingBooking(false)
     }
   }
+  
+
 
   const filteredUnits = units.filter(u =>
     filter === 'all' ? true :
@@ -148,10 +167,22 @@ export default function ProjectDetail() {
   return (
     <ProtectedRoute roles={['builder','buyer','admin']}>
       <div className="space-y-6 p-2">
+        {error && (
+          <div className="alert alert-danger d-flex justify-between items-center">
+            <span>{error}</span>
+            <button
+              type="button"
+              className="btn-close ms-3"
+              aria-label="Close"
+              onClick={() => setError(null)}
+            />
+          </div>
+        )}
         {/* Project header info */}
         <h1 className="text-2xl font-bold">{project.name}</h1>
         <p className="">Location: {project.location}</p>
         <p className="">Builder: {project.builder_name}</p>
+
 
         {/* Units section with conditional actions */}
         <div className="flex justify-between items-center">

@@ -24,7 +24,7 @@ def create_project(builder_id, name, location, num_units):
     Returns JSON response with status and new project_id or error.
     """
     # Ensure all necessary data was provided
-    if not all([builder_id, name, location, num_units]):
+    if any(x is None for x in [builder_id, name, location, num_units]):
         return jsonify({'status': 'failure', 'message': 'Missing required fields'}), 400
 
     # Use UTC ISO timestamp for created_at field

@@ -37,7 +37,7 @@ def create_new_project():
         builder_id,
         data.get('name'),
         data.get('location'),
-        data.get('num_units')
+        0
     )
 
 @builder_blueprint.route('/projects', methods=['GET'])

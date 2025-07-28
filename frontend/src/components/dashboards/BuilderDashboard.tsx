@@ -57,6 +57,14 @@ export default function BuilderDashboard() {
     import('bootstrap/dist/js/bootstrap.bundle.min.js')
   }, [])
 
+  useEffect(() => {
+    const hash = window.location.hash?.replace('#', '')
+    if (hash) {
+      const el = document.querySelector(`button[data-bs-target="#${hash}"]`) as HTMLElement
+      if (el) el.click()
+    }
+  }, [])
+
   const loadAll = () => {
     setIsLoading(true)
     Promise.all([
@@ -103,13 +111,13 @@ export default function BuilderDashboard() {
 
         <ul className="nav nav-tabs border-b" id="myTab" role="tablist">
           <li className="nav-item" role="presentation">
-            <button className="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">Overview</button>
+            <button className="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab" onClick={() => window.location.hash = 'overview'}>Overview</button>
           </li>
           <li className="nav-item" role="presentation">
-            <button className="nav-link" id="projects-tab" data-bs-toggle="tab" data-bs-target="#projects" type="button" role="tab">Projects</button>
+            <button className="nav-link" id="projects-tab" data-bs-toggle="tab" data-bs-target="#projects" type="button" role="tab" onClick={() => window.location.hash = 'projects'}>Projects</button>
           </li>
           <li className="nav-item" role="presentation">
-            <button className="nav-link" id="transactions-tab" data-bs-toggle="tab" data-bs-target="#transactions" type="button" role="tab">Transactions</button>
+            <button className="nav-link" id="transactions-tab" data-bs-toggle="tab" data-bs-target="#transactions" type="button" role="tab" onClick={() => window.location.hash = 'transactions'}>Transactions</button>
           </li>
         </ul>
 
@@ -216,7 +224,10 @@ export default function BuilderDashboard() {
                   )
                 })()}
               </div>
-            ) : <p>Could not load dashboard stats.</p>}
+            ) : <div>
+              <p>No projects yet!</p>
+              <Link href="/projects/new" className="px-4 py-2 rounded btn btn-custom">Add Project</Link>
+            </div>}
           </div>
 
           {/* Projects Tab */}
@@ -246,7 +257,7 @@ export default function BuilderDashboard() {
             {/* Unmatched Transactions */}
             <h2 className="text-2xl font-semibold mb-4">Unmatched Transactions</h2>
             {isLoading ? <p>Loading transactions...</p> : unmatched.length === 0 ? (
-              <p>All transactions are matched.</p>
+              <p>No Unmatched Transactions.</p>
             ) : unmatched.map(tx => (
               <div key={tx.id} className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 p-4 rounded border mb-3">
                 <div className=''>ID: {tx.id} ${tx.amount.toLocaleString()}</div>

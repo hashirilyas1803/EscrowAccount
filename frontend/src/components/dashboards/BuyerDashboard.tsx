@@ -4,7 +4,7 @@
 // - Fetches available projects, buyer's bookings, and transaction history on mount.
 // - Allows making new payments against units that are booked or available.
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import api from '@/lib/api'
@@ -56,13 +56,15 @@ export default function BuyerDashboard() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
 
   // Form state for recording a new transaction
-  const [txUnit, setTxUnit]     = useState<string>('')
+  const [txUnit, setTxUnit] = useState<number | ''>('');
   const [txAmount, setTxAmount] = useState<string>('')
   const [txMethod, setTxMethod] = useState<'cash'|'bank transfer'>('bank transfer')
   const [txDate, setTxDate]     = useState<string>(new Date().toISOString().slice(0,16))
   const [txError, setTxError]   = useState<string|null>(null)
   const [txSuccess, setTxSuccess] = useState<string|null>(null)
   const [txLoading, setTxLoading] = useState<boolean>(false)
+
+  const [bookingFilter, setBookingFilter] = useState<'all' | 'paid' | 'unpaid'>('all')
 
   useEffect(() => {
     import('bootstrap/dist/js/bootstrap.bundle.min.js');
@@ -106,27 +108,46 @@ export default function BuyerDashboard() {
   }, [projects])
 
   // Compute lookup sets for filtering unit dropdown
-  const bookedByYou = new Set(bookings.map(b => b.unit_id))
-  const paidUnits   = new Set(transactions.map(t => t.unit_id))
-  const matchedUnits = new Set(
-    transactions
-      .filter(t => t.booking_id !== null)
-      .map(t => t.unit_id)
-  )
+  const bookedByYou = useMemo(() => {
+    return new Set(bookings.map(b => b.unit_id))
+  }, [bookings])
+  const paidUnits = useMemo(() => {
+    return new Set(transactions.map(t => t.unit_id))
+  }, [transactions])
+
+  const matchedUnits = useMemo(() => {
+    return new Set(
+      transactions
+        .filter(t => t.booking_id !== null)
+        .map(t => t.unit_id)
+    )
+  }, [transactions])
+
+  const filteredBookings = bookings.filter(b => {
+    const isPaid = matchedUnits.has(b.unit_id)
+    return bookingFilter === 'all'
+      ? true
+      : bookingFilter === 'paid'
+      ? isPaid
+      : !isPaid
+  })
 
   // Build options for transaction dropdown: available or your booked units not yet paid
-  const eligibleUnits = allUnits
-    .filter(u =>
-      (!u.booked ||
-      bookedByYou.has(u.id)) && !paidUnits.has(u.id)
-    )
-    .map(u => ({
-      value: u.unit_id,
-      label: u.booked
-        ? `${u.unit_id} — $${u.price} (Booked by you)`
-        : `${u.unit_id} — $${u.price} (Available)`
-    }))
-
+  const eligibleUnits = useMemo(() => {
+    return allUnits
+      .filter(u =>
+        (!u.booked || bookedByYou.has(u.id)) &&
+        !paidUnits.has(u.id)
+      )
+      .map(u => ({
+        id: u.id,
+        value: u.unit_id,
+        label: u.booked
+          ? `${u.unit_id} — $${u.price} (Booked by you)`
+          : `${u.unit_id} — $${u.price} (Available)`
+      }))
+  }, [allUnits, bookedByYou, paidUnits])
+  
   // Handler for submitting a new transaction
   const handleTransaction = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -163,7 +184,7 @@ export default function BuyerDashboard() {
       setBookings(bk.data.bookings)
       setTransactions(tx.data.transactions)
       if (bk.data.bookings.length) {
-        setTxUnit(bk.data.bookings[0].unit_number)
+        setTxUnit(bk.data.bookings[0].unit_id)
       }
       setTxAmount('')
     } catch (err: any) {
@@ -223,7 +244,7 @@ export default function BuyerDashboard() {
             ) : (
               <ul className="grid grid-cols-[max-content] gap-2">
                 {projects.map(p => (
-                  <li className='my-card-clickable mt-4' key={p.id}>
+                  <li className='my-card-clickable mt-4 rounded' key={p.id}>
                     <Link href={`/projects/${p.id}`} className="block p-4 rounded shadow hover:no-underline">
                       <div className="font-medium">{p.name}</div>
                       <div className="text-sm">{p.location}</div>
@@ -236,23 +257,60 @@ export default function BuyerDashboard() {
           {/* Your Bookings section */}
           <section className='tab-pane fade' id='bookings'>
             <h2 className="text-xl font-semibold mb-4">Your Bookings</h2>
-            {bookings.length === 0 ? (
+
+            {/* Filter buttons */}
+            <div className="mb-4 flex items-center gap-2">
+              <span className="text-sm">Show:</span>
+              {['all', 'paid', 'unpaid'].map(status => (
+                <button
+                  key={status}
+                  onClick={() => setBookingFilter(status as 'all' | 'paid' | 'unpaid')}
+                  className={`px-2 py-1 rounded text-sm btn 
+                    ${bookingFilter === status ? 'btn-primary' : 'btn-outline-secondary'}`}
+                >
+                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                </button>
+              ))}
+            </div>
+
+            {/* Booking list */}
+            {filteredBookings.length === 0 ? (
               <p>You have no bookings yet.</p>
             ) : (
-              <ul className="grid grid-cols-[max-content] gap-2">
-                {bookings.map(b => {
+              <ul className="grid grid-cols gap-2">
+                {filteredBookings.map(b => {
                   const unit = unitIdToUnit.get(b.unit_number)
                   const projectName = unit ? projectIdToName.get(unit.project_id) : 'Unknown Project'
+                  const isPaid = matchedUnits.has(b.unit_id)
+
                   return (
-                    <li key={b.id} className="p-4 rounded shadow my-card-clickable mt-4">
-                      <div><strong>Project:</strong> {projectName}</div>
-                      <div><strong>Unit:</strong> {b.unit_number}</div>
-                      <div><strong>Amount:</strong> ${b.amount}</div>
-                      <div><strong>Date:</strong> {b.date}</div>
-                      <div>
-                        <strong>Status:</strong>{' '}
-                        {matchedUnits.has(b.unit_id) ? 'Paid' : 'Unpaid'}
-                      </div>
+                    <li key={b.id} className="p-4 rounded shadow my-card mt-4 space-y-3">
+                      <div className="text-lg fs-5"><strong>Unit {b.unit_number}</strong></div>
+
+                      <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                        <dt className="font-medium">Project:</dt>
+                        <dd>{projectName}</dd>
+
+                        <dt className="font-medium">Amount:</dt>
+                        <dd>${b.amount}</dd>
+
+                        <dt className="font-medium">Date:</dt>
+                        <dd>
+                          {new Date(b.date).toLocaleString('en-GB', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit'
+                          })}
+                        </dd>
+
+                        <dt className="font-medium">Status:</dt>
+                        <dd className={isPaid ? 'text-success' : 'text-danger'}>
+                          {isPaid ? 'Paid' : 'Unpaid'}
+                        </dd>
+                      </dl>
                     </li>
                   )
                 })}
@@ -264,7 +322,7 @@ export default function BuyerDashboard() {
             <h2 className="text-xl font-semibold mb-4">Make a Payment</h2>
             <form
               onSubmit={handleTransaction}
-              className="flex flex-col gap-4 w-1/2 p-4 rounded shadow my-card-clickable"
+              className="flex flex-col gap-4 w-1/2 p-4 rounded shadow my-card"
             >
               {/* Unit dropdown */}
               <div>
@@ -274,7 +332,7 @@ export default function BuyerDashboard() {
                 <select
                   id="txUnit"
                   value={txUnit}
-                  onChange={e => setTxUnit(e.target.value)}
+                  onChange={e => setTxUnit(Number(e.target.value))}
                   className="mt-1 block w-full border rounded p-2"
                   required
                 >
@@ -282,7 +340,7 @@ export default function BuyerDashboard() {
                     Select Unit…
                   </option>
                   {eligibleUnits.map(o => (
-                    <option key={o.value} value={o.value}>
+                    <option key={o.value} value={o.id}>
                       {o.label}
                     </option>
                   ))}

@@ -163,8 +163,10 @@ def insert_unit(project_id, unit_id, floor, area, price, created_at):
             "INSERT INTO Unit (project_id, unit_id, floor, area, price, created_at) VALUES (?, ?, ?, ?, ?, ?)",
             (project_id, unit_id, floor, area, price, created_at)
         )
+        id = cursor.lastrowid
+        cursor.execute("UPDATE Project SET num_units = num_units + 1 WHERE id = ?", (project_id, ))
         conn.commit()
-        return cursor.lastrowid
+        return id
     except Exception:
         conn.rollback()
         return None
@@ -297,7 +299,7 @@ def fetch_all_bookings():
 
 # ---------- Transaction ----------
 
-def create_transaction(amount, date, payment_method, created_at, unit_id):
+def create_transaction(amount, date, payment_method, created_at, buyer_id, unit_id):
     """
     Create a new transaction record linked to a unit.
     Returns transaction ID or None.
@@ -306,9 +308,9 @@ def create_transaction(amount, date, payment_method, created_at, unit_id):
     cursor = conn.cursor()
     try:
         cursor.execute(
-            "INSERT INTO Transaction_log (amount, date, payment_method, created_at, unit_id)"
-            " VALUES (?, ?, ?, ?, ?)",
-            (amount, date, payment_method, created_at, unit_id)
+            "INSERT INTO Transaction_log (amount, date, payment_method, created_at, buyer_id, unit_id)"
+            " VALUES (?, ?, ?, ?, ?, ?)",
+            (amount, date, payment_method, created_at, buyer_id, unit_id)
         )
         conn.commit()
         return cursor.lastrowid
@@ -329,11 +331,12 @@ def fetch_all_transactions():
     cursor = conn.cursor()
     try:
         cursor.execute(
-            "SELECT Transaction_log.*, Buyer.name AS buyer_name, Unit.unit_id AS unit_number"
+            "SELECT Transaction_log.*, Buyer.name AS buyer_name, Unit.unit_id AS unit_number, Project.name AS project_name"
             " FROM Transaction_log"
             " LEFT JOIN Booking ON Transaction_log.booking_id = Booking.id"
-            " LEFT JOIN Buyer ON Booking.buyer_id = Buyer.id"
+            " LEFT JOIN Buyer ON Transaction_log.buyer_id = Buyer.id"
             " LEFT JOIN Unit ON Booking.unit_id = Unit.id"
+            " LEFT JOIN Project ON Unit.project_id = Project.id"
         )
         rows = cursor.fetchall()
         return [dict(row) for row in rows]

@@ -43,9 +43,9 @@ export default function NewUnitPage() {
       })
       // On success, navigate back to project units list
       router.back()
-    } catch (e: any) {
-      // Display API error message or a fallback
-      setError(e.response?.data?.message || 'Failed to create unit')
+    }  catch (e: any) {
+      const errorMsg = e.response?.data?.message || 'Failed to create unit'
+      router.push(`/projects/${projectId}?error=${encodeURIComponent(errorMsg)}`)
     } finally {
       setLoading(false)
     }

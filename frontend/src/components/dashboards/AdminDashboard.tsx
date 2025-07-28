@@ -32,6 +32,7 @@ interface Booking {
 
 interface Transaction {
   id: number
+  project_name: string
   unit_number: string
   buyer_name: string
   amount: number
@@ -214,7 +215,7 @@ export default function AdminDashboard() {
             ) : (
               <ul className="space-y-2">
                 {displayProjects.map(p => (
-                  <li className='mt-4 my-card' key={p.id}>
+                  <li className='mt-4 my-card-clickable' key={p.id}>
                     <Link
                       href={`/projects/${p.id}`}
                       className="block p-4 rounded shadow"
@@ -250,7 +251,15 @@ export default function AdminDashboard() {
                     <div><strong>Unit:</strong> {b.unit_number}</div>
                     <div><strong>Buyer:</strong> {b.buyer_name}</div>
                     <div><strong>Amount:</strong> ${b.amount}</div>
-                    <div><strong>Date:</strong> {b.date}</div>
+                    <div><strong>Date:</strong> {new Date(b.date).toLocaleString('en-GB', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit'
+                          })}
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -267,10 +276,19 @@ export default function AdminDashboard() {
                 {transactions.map(t => (
                   <li key={t.id} className="p-4 rounded shadow my-card mt-4">
                     <div><strong>Txn ID:</strong> {t.id}</div>
+                    <div><strong>Project:</strong> {t.project_name}</div>
                     <div><strong>Unit:</strong> {t.unit_number}</div>
                     <div><strong>Buyer:</strong> {t.buyer_name}</div>
                     <div><strong>Amount:</strong> ${t.amount}</div>
-                    <div><strong>Date:</strong> {t.date}</div>
+                    <div><strong>Date:</strong> {new Date(t.date).toLocaleString('en-GB', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit'
+                          })}
+                    </div>
                     <div><strong>Method:</strong> {t.payment_method}</div>
                     <div>
                       <strong>Booking ID:</strong>{' '}

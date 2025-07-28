@@ -83,6 +83,7 @@ def create_transaction():
         amount,
         date,
         payment_method,
+        session['buyer_id'],
         unit_id
     )
 
