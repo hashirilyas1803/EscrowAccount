@@ -64,6 +64,10 @@ export default function BuyerDashboard() {
   const [txSuccess, setTxSuccess] = useState<string|null>(null)
   const [txLoading, setTxLoading] = useState<boolean>(false)
 
+  useEffect(() => {
+    import('bootstrap/dist/js/bootstrap.bundle.min.js');
+  }, []);
+
   // 1️⃣ Load initial data: projects, bookings, transactions
   useEffect(() => {
     api.get('/buyer/projects')
@@ -190,151 +194,164 @@ export default function BuyerDashboard() {
     <ProtectedRoute roles={['buyer']}>
       <div className="space-y-12">
 
-        {/* Projects section: browse all available projects */}
-        <section>
-          <h1 className="text-2xl font-bold mb-4">Browse Projects</h1>
-          {projects.length === 0 ? (
-            <p>No projects available.</p>
-          ) : (
-            <ul className="space-y-2">
-              {projects.map(p => (
-                <li key={p.id}>
-                  <Link href={`/projects/${p.id}`} className="block p-4 rounded shadow">
-                    <div className="font-medium">{p.name}</div>
-                    <div className="text-sm">{p.location}</div>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        {/* Your Bookings section */}
-        <section>
-          <h2 className="text-xl font-semibold mb-4">Your Bookings</h2>
-          {bookings.length === 0 ? (
-            <p>You have no bookings yet.</p>
-          ) : (
-            <ul className="space-y-4">
-              {bookings.map(b => {
-                const unit = unitIdToUnit.get(b.unit_number)
-                const projectName = unit ? projectIdToName.get(unit.project_id) : 'Unknown Project'
-
-                return (
-                  <li key={b.id} className="p-4 rounded shadow">
-                    <div><strong>Project:</strong> {projectName}</div>
-                    <div><strong>Unit:</strong> {b.unit_number}</div>
-                    <div><strong>Amount:</strong> ${b.amount}</div>
-                    <div><strong>Date:</strong> {b.date}</div>
-                    <div>
-                      <strong>Status:</strong>{' '}
-                      {matchedUnits.has(b.unit_id) ? 'Paid' : 'Unpaid'}
-                    </div>
-                  </li>
-                )
-              })}
-            </ul>
-          )}
-        </section>
-
-
-        {/* Make a Payment section */}
-        <section>
-          <h2 className="text-xl font-semibold mb-4">Make a Payment</h2>
-          <form
-            onSubmit={handleTransaction}
-            className="flex flex-col gap-4 w-1/2 p-6 rounded shadow"
-          >
-            {/* Unit dropdown */}
-            <div>
-              <label htmlFor="txUnit" className="block text-sm font-medium mb-1">
-                Unit
-              </label>
-              <select
-                id="txUnit"
-                value={txUnit}
-                onChange={e => setTxUnit(e.target.value)}
-                className="mt-1 block w-full border rounded p-2"
-                required
-              >
-                <option value="" disabled hidden>
-                  Select Unit…
-                </option>
-                {eligibleUnits.map(o => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Amount input */}
-            <div>
-              <label htmlFor="txAmount" className="block text-sm font-medium mb-1">
-                Amount
-              </label>
-              <input
-                id="txAmount"
-                type="number"
-                value={txAmount}
-                placeholder="Amount"
-                onChange={e => setTxAmount(e.target.value)}
-                className="mt-1 block w-full border rounded p-2"
-                min="0.01"
-                step="0.01"
-                required
-              />
-            </div>
-
-            {/* Date/time picker */}
-            <div>
-              <label htmlFor="txDate" className="block text-sm font-medium mb-1">
-                Transaction Date &amp; Time
-              </label>
-              <input
-                id="txDate"
-                type="datetime-local"
-                value={txDate}
-                onChange={e => setTxDate(e.target.value)}
-                className="mt-1 block w-full border rounded p-2"
-                required
-              />
-            </div>
-
-            {/* Payment method selector */}
-            <div>
-              <label htmlFor="txMethod" className="block text-sm font-medium mb-1">
-                Payment Method
-              </label>
-              <select
-                id="txMethod"
-                value={txMethod}
-                onChange={e => setTxMethod(e.target.value as any)}
-                className="mt-1 block w-full border rounded p-2"
-                required
-              >
-                <option value="" disabled hidden>
-                  Select Method…
-                </option>
-                <option value="bank transfer">Bank Transfer</option>
-                <option value="cash">Cash</option>
-              </select>
-            </div>
-
-            {/* Form messages */}
-            {txError && <p className="text-danger text-sm">{txError}</p>}
-            {txSuccess && <p className="text-success text-sm">{txSuccess}</p>}
-
-            {/* Submit button */}
-            <button
-              type="submit"
-              disabled={txLoading}
-              className="px-4 py-2 rounded disabled:opacity-50 btn btn-secondary"
-            >
-              {txLoading ? 'Recording…' : 'Record Transaction'}
+        {/* Page title */}
+        <h1 className="text-3xl font-bold">Buyer Dashboard</h1>
+        <ul className="nav nav-tabs" id="myTab" role="tablist">
+          <li className="nav-item" role="presentation">
+            <button className="nav-link active" id="projects-tab" data-bs-toggle="tab" data-bs-target="#projects" type="button" role="tab" aria-controls="projects" aria-selected="false">
+              Browse Projects
             </button>
-          </form>
-        </section>
+          </li>
+          <li className="nav-item" role="presentation">
+            <button className="nav-link" id="unmatched-tab" data-bs-toggle="tab" data-bs-target="#bookings" type="button" role="tab" aria-controls="unmatched" aria-selected="false">
+              Your Bookings
+            </button>
+          </li>
+          <li className="nav-item" role="presentation">
+            <button className="nav-link" id="matched-tab" data-bs-toggle="tab" data-bs-target="#payment" type="button" role="tab" aria-controls="matched" aria-selected="false">
+              Make a Payment
+            </button>
+          </li>
+        </ul>
+
+        <div className='tab-content p-4' id="myTabContent">
+          {/* Projects section: browse all available projects */}
+          <section className='tab-pane fade show active p-4' id='projects'>
+            <h2 className="text-2xl font-bold mb-4">Browse Projects</h2>
+            {projects.length === 0 ? (
+              <p>No projects available.</p>
+            ) : (
+              <ul className="grid grid-cols-[max-content] gap-2">
+                {projects.map(p => (
+                  <li className='my-card-clickable mt-4' key={p.id}>
+                    <Link href={`/projects/${p.id}`} className="block p-4 rounded shadow hover:no-underline">
+                      <div className="font-medium">{p.name}</div>
+                      <div className="text-sm">{p.location}</div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+          {/* Your Bookings section */}
+          <section className='tab-pane fade' id='bookings'>
+            <h2 className="text-xl font-semibold mb-4">Your Bookings</h2>
+            {bookings.length === 0 ? (
+              <p>You have no bookings yet.</p>
+            ) : (
+              <ul className="grid grid-cols-[max-content] gap-2">
+                {bookings.map(b => {
+                  const unit = unitIdToUnit.get(b.unit_number)
+                  const projectName = unit ? projectIdToName.get(unit.project_id) : 'Unknown Project'
+                  return (
+                    <li key={b.id} className="p-4 rounded shadow my-card-clickable mt-4">
+                      <div><strong>Project:</strong> {projectName}</div>
+                      <div><strong>Unit:</strong> {b.unit_number}</div>
+                      <div><strong>Amount:</strong> ${b.amount}</div>
+                      <div><strong>Date:</strong> {b.date}</div>
+                      <div>
+                        <strong>Status:</strong>{' '}
+                        {matchedUnits.has(b.unit_id) ? 'Paid' : 'Unpaid'}
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </section>
+          {/* Make a Payment section */}
+          <section className='tab-pane fade' id='payment'>
+            <h2 className="text-xl font-semibold mb-4">Make a Payment</h2>
+            <form
+              onSubmit={handleTransaction}
+              className="flex flex-col gap-4 w-1/2 p-4 rounded shadow my-card-clickable"
+            >
+              {/* Unit dropdown */}
+              <div>
+                <label htmlFor="txUnit" className="block text-sm font-medium mb-1">
+                  Unit
+                </label>
+                <select
+                  id="txUnit"
+                  value={txUnit}
+                  onChange={e => setTxUnit(e.target.value)}
+                  className="mt-1 block w-full border rounded p-2"
+                  required
+                >
+                  <option value="" disabled hidden>
+                    Select Unit…
+                  </option>
+                  {eligibleUnits.map(o => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {/* Amount input */}
+              <div>
+                <label htmlFor="txAmount" className="block text-sm font-medium mb-1">
+                  Amount
+                </label>
+                <input
+                  id="txAmount"
+                  type="number"
+                  value={txAmount}
+                  placeholder="Amount"
+                  onChange={e => setTxAmount(e.target.value)}
+                  className="mt-1 block w-full border rounded p-2"
+                  min="0.01"
+                  step="0.01"
+                  required
+                />
+              </div>
+              {/* Date/time picker */}
+              <div>
+                <label htmlFor="txDate" className="block text-sm font-medium mb-1">
+                  Transaction Date &amp; Time
+                </label>
+                <input
+                  id="txDate"
+                  type="datetime-local"
+                  value={txDate}
+                  onChange={e => setTxDate(e.target.value)}
+                  className="mt-1 block w-full border rounded p-2"
+                  required
+                />
+              </div>
+              {/* Payment method selector */}
+              <div>
+                <label htmlFor="txMethod" className="block text-sm font-medium mb-1">
+                  Payment Method
+                </label>
+                <select
+                  id="txMethod"
+                  value={txMethod}
+                  onChange={e => setTxMethod(e.target.value as any)}
+                  className="mt-1 block w-full border rounded p-2"
+                  required
+                >
+                  <option value="" disabled hidden>
+                    Select Method…
+                  </option>
+                  <option value="bank transfer">Bank Transfer</option>
+                  <option value="cash">Cash</option>
+                </select>
+              </div>
+              {/* Form messages */}
+              {txError && <p className="text-danger text-sm">{txError}</p>}
+              {txSuccess && <p className="text-success text-sm">{txSuccess}</p>}
+              {/* Submit button */}
+              <button
+                type="submit"
+                disabled={txLoading}
+                className="px-4 py-2 rounded disabled:opacity-50 btn btn-custom"
+              >
+                {txLoading ? 'Recording…' : 'Record Transaction'}
+              </button>
+            </form>
+          </section>
+        </div>
 
       </div>
     </ProtectedRoute>

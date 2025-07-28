@@ -53,6 +53,11 @@ export default function AdminDashboard() {
   const [builderFilter, setBuilderFilter]   = useState<number|null>(null)
   const [projectSearch, setProjectSearch]   = useState<string>('')
   const [bookingSearch, setBookingSearch]   = useState<string>('')
+  
+  // Import Bootstrap JS for tab functionality
+  useEffect(() => {
+    import('bootstrap/dist/js/bootstrap.bundle.min.js');
+  }, []);
 
   // 1) Fetch all data once when component mounts
   useEffect(() => {
@@ -120,143 +125,164 @@ export default function AdminDashboard() {
 
   return (
     <ProtectedRoute roles={[ 'admin' ]}>
-      <div className="flex flex-col gap-4">
+      <div className="space-y-12">
 
         {/* Page header */}
         <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+        
+        {/* Tab Navigation */}
+        <ul className="nav nav-tabs" id="adminTab" role="tablist">
+          <li className="nav-item" role="presentation">
+            <button className="nav-link active" id="projects-tab" data-bs-toggle="tab" data-bs-target="#projects" type="button" role="tab" aria-controls="projects" aria-selected="false">
+              Projects
+            </button>
+          </li>
+          <li className="nav-item" role="presentation">
+            <button className="nav-link" id="bookings-tab" data-bs-toggle="tab" data-bs-target="#bookings" type="button" role="tab" aria-controls="bookings" aria-selected="false">
+              Bookings
+            </button>
+          </li>
+          <li className="nav-item" role="presentation">
+            <button className="nav-link" id="transactions-tab" data-bs-toggle="tab" data-bs-target="#transactions" type="button" role="tab" aria-controls="transactions" aria-selected="false">
+              Transactions
+            </button>
+          </li>
+        </ul>
+        
+        {/* Tab Content */}
+        <div className='tab-content p-4' id="adminTabContent">
+        
+          {/* Builders list with filter buttons */}
+          <section className='tab-pane fade show active' id='projects'>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-semibold">Registered Builders</h2>
 
-        {/* Builders list with filter buttons */}
-        <section>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-semibold">Registered Builders</h2>
-
-              {/* Show the active filter as a pill */}
-              {builderFilter !== null && (
-                <div className="flex items-center space-x-2">
-                  <span className="px-3 py-1.5 rounded-full text-sm">
-                    {
-                      // find the name for the active builder
-                      builders.find(b => b.id === builderFilter)?.name
-                    }
-                  </span>
-                  <button
-                    onClick={() => setBuilderFilter(null)}
-                    className="btn btn-secondary text-sm"
-                    aria-label="Clear builder filter"
-                  >
-                    ✕
-                  </button>
-                </div>
-              )}
-            </div>
-            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {builders.map((b) => {
-              const isActive = builderFilter === b.id;
-              return (
-                <li key={b.id}>
-                  <button
-                    onClick={() => setBuilderFilter(b.id)}
-                    className={`
-                      w-full text-left p-4 rounded shadow transition btn
-                      ${isActive
-                        ? 'btn-secondary'
-                        : 'btn-dark'}
-                    `}
-                    aria-pressed={isActive}
-                  >
-                    <div className="text-sm">{b.name}</div>
-                    <div className="text-sm">{b.email}</div>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-
-        {/* Projects with search input */}
-        <section className="space-y-2">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-semibold">Projects</h2>
-            <input
-              type="text"
-              placeholder="Search projects…"
-              value={projectSearch}
-              onChange={e => setProjectSearch(e.target.value)}
-              className="border rounded p-2 w-64"
-            />
-          </div>
-          {displayProjects.length === 0 ? (
-            <p>No projects found.</p>
-          ) : (
-            <ul className="space-y-2">
-              {displayProjects.map(p => (
-                <li key={p.id}>
-                  <Link
-                    href={`/projects/${p.id}`}
-                    className="block p-4 rounded shadow"
-                  >
-                    <div className="font-medium">{p.name}</div>
-                    <div className="text-sm">{p.location}</div>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        {/* Bookings with search */}
-        <section className="space-y-2">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-semibold">Bookings</h2>
-            <input
-              type="text"
-              placeholder="Search buyer or unit…"
-              value={bookingSearch}
-              onChange={e => setBookingSearch(e.target.value)}
-              className="border rounded p-2 w-64"
-            />
-          </div>
-          {displayBookings.length === 0 ? (
-            <p>No bookings found.</p>
-          ) : (
-            <ul className="space-y-2">
-              {displayBookings.map(b => (
-                <li key={b.id} className="p-4 rounded shadow">
-                  <div><strong>Project:</strong> {b.project_name}</div>
-                  <div><strong>Unit:</strong> {b.unit_number}</div>
-                  <div><strong>Buyer:</strong> {b.buyer_name}</div>
-                  <div><strong>Amount:</strong> ${b.amount}</div>
-                  <div><strong>Date:</strong> {b.date}</div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        {/* Transactions log */}
-        <section className="space-y-2">
-          <h2 className="text-2xl font-semibold">Transactions Log</h2>
-          {transactions.length === 0 ? (
-            <p>No transactions recorded.</p>
-          ) : (
-            <ul className="space-y-2">
-              {transactions.map(t => (
-                <li key={t.id} className="p-4 rounded shadow">
-                  <div><strong>Txn ID:</strong> {t.id}</div>
-                  <div><strong>Unit:</strong> {t.unit_number}</div>
-                  <div><strong>Buyer:</strong> {t.buyer_name}</div>
-                  <div><strong>Amount:</strong> ${t.amount}</div>
-                  <div><strong>Date:</strong> {t.date}</div>
-                  <div><strong>Method:</strong> {t.payment_method}</div>
-                  <div>
-                    <strong>Booking ID:</strong>{' '}
-                    {t.booking_id !== null ? t.booking_id : 'unmatched'}
+                {/* Show the active filter as a pill */}
+                {builderFilter !== null && (
+                  <div className="flex items-center space-x-2">
+                    <span className="px-3 py-1.5 rounded-full text-sm">
+                      {
+                        // find the name for the active builder
+                        builders.find(b => b.id === builderFilter)?.name
+                      }
+                    </span>
+                    <button
+                      onClick={() => setBuilderFilter(null)}
+                      className="btn btn-custom text-sm"
+                      aria-label="Clear builder filter"
+                    >
+                      ✕
+                    </button>
                   </div>
-                </li>
-              ))}
+                )}
+              </div>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {builders.map((b) => {
+                const isActive = builderFilter === b.id;
+                return (
+                  <li key={b.id}>
+                    <button
+                      onClick={() => setBuilderFilter(b.id)}
+                      className={`
+                        w-full text-left p-4 rounded shadow transition btn my-card
+                        ${isActive
+                          ? 'active'
+                          : ''}
+                      `}
+                      aria-pressed={isActive}
+                    >
+                      <div className="text-sm">{b.name}</div>
+                      <div className="text-sm">{b.email}</div>
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
-          )}
-        </section>
+            {/* Projects with search input */}
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-semibold">Projects</h2>
+              <input
+                type="text"
+                placeholder="Search projects…"
+                value={projectSearch}
+                onChange={e => setProjectSearch(e.target.value)}
+                className="border rounded p-2 w-64"
+              />
+            </div>
+            {displayProjects.length === 0 ? (
+              <p>No projects found.</p>
+            ) : (
+              <ul className="space-y-2">
+                {displayProjects.map(p => (
+                  <li className='mt-4 my-card' key={p.id}>
+                    <Link
+                      href={`/projects/${p.id}`}
+                      className="block p-4 rounded shadow"
+                    >
+                      <div className="font-medium">{p.name}</div>
+                      <div className="text-sm">{p.location}</div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          {/* Bookings with search */}
+          <section className='tab-pane fade space-y-2' id='bookings'>
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-semibold">Bookings</h2>
+              <input
+                type="text"
+                placeholder="Search buyer or unit…"
+                value={bookingSearch}
+                onChange={e => setBookingSearch(e.target.value)}
+                className="border rounded p-2 w-64"
+              />
+            </div>
+            {displayBookings.length === 0 ? (
+              <p>No bookings found.</p>
+            ) : (
+              <ul className="space-y-2">
+                {displayBookings.map(b => (
+                  <li key={b.id} className="p-4 rounded shadow my-card mt-4">
+                    <div><strong>Project:</strong> {b.project_name}</div>
+                    <div><strong>Unit:</strong> {b.unit_number}</div>
+                    <div><strong>Buyer:</strong> {b.buyer_name}</div>
+                    <div><strong>Amount:</strong> ${b.amount}</div>
+                    <div><strong>Date:</strong> {b.date}</div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          {/* Transactions log */}
+          <section className='tab-pane fade space-y-2' id='transactions'>
+            <h2 className="text-2xl font-semibold">Transactions Log</h2>
+            {transactions.length === 0 ? (
+              <p>No transactions recorded.</p>
+            ) : (
+              <ul className="space-y-2">
+                {transactions.map(t => (
+                  <li key={t.id} className="p-4 rounded shadow my-card mt-4">
+                    <div><strong>Txn ID:</strong> {t.id}</div>
+                    <div><strong>Unit:</strong> {t.unit_number}</div>
+                    <div><strong>Buyer:</strong> {t.buyer_name}</div>
+                    <div><strong>Amount:</strong> ${t.amount}</div>
+                    <div><strong>Date:</strong> {t.date}</div>
+                    <div><strong>Method:</strong> {t.payment_method}</div>
+                    <div>
+                      <strong>Booking ID:</strong>{' '}
+                      {t.booking_id !== null ? t.booking_id : 'unmatched'}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </div>
+        
       </div>
     </ProtectedRoute>
   )

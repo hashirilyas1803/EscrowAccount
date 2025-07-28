@@ -8,6 +8,7 @@ from backend.db.queries import (
     fetch_projects_by_builder,
     fetch_units_by_project,
     fetch_dashboard_data,
+    fetch_additional_dashboard_data,
     match_transaction_to_booking,
     fetch_transactions_by_builder,
     fetch_bookings_by_builder_id,
@@ -135,12 +136,14 @@ def get_dashboard_metrics(builder_id):
     total units, booked units, booking amounts, unmatched transactions.
     """
     metrics = fetch_dashboard_data(builder_id)
+    metrics2 = fetch_additional_dashboard_data(builder_id)
 
-    if metrics is not None:
+    if metrics is not None and metrics2 is not None:
         # Merge metrics tuple into JSON response
         return jsonify({
             'status': 'success',
-            **dict(metrics)
+            **dict(metrics),
+            'per_project': metrics2
         }), 200
 
     # Data not found or error

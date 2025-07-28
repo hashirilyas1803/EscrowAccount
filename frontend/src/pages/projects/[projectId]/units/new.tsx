@@ -56,7 +56,7 @@ return (
   <ProtectedRoute roles={['builder']}>
     <form
       onSubmit={submit}
-      className="max-w-md mx-auto p-6 rounded shadow flex flex-col gap-4"
+      className="w-1/2 mx-auto p-4 rounded shadow flex flex-col gap-4 my-card"
     >
       <h1 className="text-2xl font-bold">Add New Unit</h1>
 
@@ -125,7 +125,7 @@ return (
       <button
         type="submit"
         disabled={loading}
-        className="w-full py-2 rounded disabled:opacity-50 btn btn-secondary"
+        className="w-full py-2 rounded disabled:opacity-50 btn btn-custom"
       >
         {loading ? 'Creating…' : 'Create Unit'}
       </button>

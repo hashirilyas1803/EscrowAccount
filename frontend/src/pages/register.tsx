@@ -135,7 +135,7 @@ export default function RegisterPage() {
         {/* Submit button */}
         <button
           type="submit"
-          className="w-full bg-primary-subtle text-dark py-2 rounded hover:bg-primary-emphasis"
+          className="w-full btn-custom py-2 rounded"
         >
           Create Account
         </button>

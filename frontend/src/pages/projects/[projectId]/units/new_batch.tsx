@@ -1,4 +1,4 @@
-// NewUnitPage.tsx
+// NewUnitBatchPage.tsx
 import React, { useState } from 'react'
 import { useRouter } from 'next/router'
 import ProtectedRoute from '@/components/ProtectedRoute'
@@ -52,7 +52,7 @@ export default function NewUnitBatchPage() {
     <ProtectedRoute roles={['builder']}>
       <form
         onSubmit={submit}
-        className="max-w-md mx-auto p-6 rounded shadow flex flex-col gap-4"
+        className="w-1/2 mx-auto p-4 rounded shadow flex flex-col gap-4 my-card"
       >
         <h1 className="text-2xl font-bold">Add New Unit Batch</h1>
 
@@ -140,7 +140,7 @@ export default function NewUnitBatchPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-2 rounded disabled:opacity-50 btn btn-secondary"
+          className="w-full py-2 rounded disabled:opacity-50 btn btn-custom"
         >
           {loading ? 'Creating…' : 'Create Units'}
         </button>

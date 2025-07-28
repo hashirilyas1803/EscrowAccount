@@ -425,6 +425,41 @@ def fetch_dashboard_data(builder_id):
         cursor.close()
         conn.close()
 
+def fetch_additional_dashboard_data(builder_id):
+    """
+    Aggregate additional metrics for a builder's dashboard:
+      units_per_project, bookings_per_project, amount_per_project, unmatched_transactions_per_project.
+    Returns dict or None.
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            """
+            SELECT
+                p.id AS project_id,
+                p.name AS name,
+                COUNT(DISTINCT u.id) AS units_per_project,
+                COUNT(DISTINCT b.id) AS bookings_per_project,
+                COALESCE(SUM(b.amount), 0) AS amount_per_project,
+                COUNT(DISTINCT t.id) FILTER (WHERE t.booking_id IS NULL) AS unmatched_transactions_per_project
+                FROM Project p
+                LEFT JOIN Unit u ON u.project_id = p.id
+                LEFT JOIN Booking b ON b.unit_id = u.id
+                LEFT JOIN Transaction_log t ON t.unit_id = u.id
+                WHERE p.builder_id = ?
+                GROUP BY p.id
+            """,
+            (builder_id,)
+        )
+        rows = cursor.fetchall()
+        return [dict(row) for row in rows] if rows else None
+    except Exception:
+        return None
+    finally:
+        cursor.close()
+        conn.close()
+
 # ---------- Admin (Global) ----------
 
 def fetch_all_builders():

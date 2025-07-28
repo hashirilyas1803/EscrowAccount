@@ -136,7 +136,7 @@ export default function UnitDetail() {
 
   return (
     <ProtectedRoute roles={['admin','builder','buyer']}>
-      <div className="space-y-6 p-6">
+      <div className="space-y-6 p-2">
         {/* Unit header with dynamic status indicator */}
         <h1 className="text-2xl font-bold">
           Unit {unit.number}{' '}
@@ -153,20 +153,20 @@ export default function UnitDetail() {
 
         {/* Unit details section */}
         <div className="space-y-1">
-          <p><strong>Floor:</strong> {unit.floor}</p>
-          <p><strong>Area:</strong> {unit.area} sqft</p>
-          <p><strong>Price:</strong> ${unit.price}</p>
-          <p><strong>Builder:</strong> {unit.builder_name}</p>
+          <p className='px-4 fs-5'><strong>Floor:</strong> {unit.floor}</p>
+          <p className='px-4 fs-5'><strong>Area:</strong> {unit.area} sqft</p>
+          <p className='px-4 fs-5'><strong>Price:</strong> ${unit.price}</p>
+          <p className='px-4 fs-5'><strong>Builder:</strong> {unit.builder_name}</p>
         </div>
 
         {/* Booking details, shown if a booking exists */}
         {booking && (
-          <div className="p-4 rounded space-y-1">
+          <div className="rounded space-y-1 mt-4">
             <h2 className="font-semibold">Booking Details</h2>
-            <p><strong>ID:</strong> {booking.id}</p>
-            <p><strong>Buyer:</strong> {booking.buyer_name}</p>
-            <p><strong>Amount:</strong> ${booking.amount}</p>
-            <p><strong>Date:</strong> {booking.date}</p>
+            <p className='px-4 fs-5'><strong>ID:</strong> {booking.id}</p>
+            <p className='px-4 fs-5'><strong>Buyer:</strong> {booking.buyer_name}</p>
+            <p className='px-4 fs-5'><strong>Amount:</strong> ${booking.amount}</p>
+            <p className='px-4 fs-5'><strong>Date:</strong> {booking.date}</p>
           </div>
         )}
 

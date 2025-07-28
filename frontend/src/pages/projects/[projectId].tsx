@@ -147,11 +147,11 @@ export default function ProjectDetail() {
 
   return (
     <ProtectedRoute roles={['builder','buyer','admin']}>
-      <div className="space-y-6 p-6">
+      <div className="space-y-6 p-2">
         {/* Project header info */}
         <h1 className="text-2xl font-bold">{project.name}</h1>
-        <p className="text-gray-600">Location: {project.location}</p>
-        <p className="text-gray-600">Builder: {project.builder_name}</p>
+        <p className="">Location: {project.location}</p>
+        <p className="">Builder: {project.builder_name}</p>
 
         {/* Units section with conditional actions */}
         <div className="flex justify-between items-center">
@@ -177,13 +177,13 @@ export default function ProjectDetail() {
             <div className='flex flex-row gap-4'>
               <Link
                 href={`/projects/${project.id}/units/new`}
-                className="px-3 py-1 rounded btn btn-secondary"
+                className="px-3 py-1 rounded btn btn-custom"
               >
                 Add Unit
               </Link>
               <Link
                 href={`/projects/${project.id}/units/new_batch`}
-                className="px-3 py-1 rounded btn btn-secondary"
+                className="px-3 py-1 rounded btn btn-custom"
               >
                 Add Multiple Units
               </Link>
@@ -226,7 +226,7 @@ export default function ProjectDetail() {
 
         <ul className="space-y-4">
           {filteredUnits.map(u => (
-            <li key={u.id} className="rounded shadow p-4 space-y-3">
+            <li key={u.id} className="rounded shadow p-4 space-y-3 my-4 my-card">
               {user?.role === 'buyer' ? (
                 // Buyer sees detailed unit info and can book if available
                 <>
@@ -318,7 +318,7 @@ export default function ProjectDetail() {
                   </div>
                   <Link
                     href={`/projects/${project.id}/units/${u.id}`}
-                    className="hover:underline btn btn-secondary"
+                    className="hover:underline btn btn-custom"
                   >Details</Link>
                 </div>
               )}

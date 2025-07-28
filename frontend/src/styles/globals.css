@@ -6,14 +6,19 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@import "bootstrap/dist/css/bootstrap.css";
 
 /* Apply a Google Font */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
 
 body {
-  background-color: #212529;
-  color: #f8f9fa;
-  font-family: ui-sans-serif, system-ui, -apple-system;
+  font-family: system-ui, "Segoe UI", Roboto, Arial, sans-serif;
+  background-color: #f4f4f4;
+}
+
+nav {
+  background-color: #2f4858;
+  color: #fff;
 }
 
 /* Link styles */
@@ -29,18 +34,16 @@ h1, h2, h3 {
   font-weight: 600;
   letter-spacing: -0.5px;
   margin-bottom: 1rem;
+  color: #212121;
 }
 h1 {
   font-size: 2.5rem;
-  color: #00b4d8;
 }
 h2 {
   font-size: 2rem;
-  color: #4dd0e1;
 }
 h3 {
   font-size: 1.5rem;
-  color: #81ecec;
 }
 
 /* Paragraphs */
@@ -48,4 +51,41 @@ p {
   line-height: 1.6;
   margin-bottom: 1rem;
   font-size: 1rem;
+}
+
+.nav-item .nav-link.active {
+  background-color: #506f83;
+}
+
+.nav-item .nav-link {
+  padding-inline: 2rem;
+  background-color: #2f4858;
+  color: white;
+}
+
+.my-card {
+  background-color: #fff;
+  border-color: #bdbdbd;
+  border: 1px solid;
+}
+
+.my-card-clickable {
+  background-color: #fff;
+  border-color: #bdbdbd;
+  border: 1px solid;
+}
+.my-card-clickable:hover {
+  background-color: #ddd;
+}
+
+.btn-custom {
+  background-color: #2f4858;
+  color: #fff;
+}
+.btn-custom:hover {
+  background-color: #47697e;
+}
+
+.btn-custom.active {
+  background-color: #47697e;
 }

@@ -53,7 +53,7 @@ export default function NewProjectPage() {
     <ProtectedRoute roles={['builder']}>
       <form
         onSubmit={submit}
-        className="w-1/2 mx-auto p-6 rounded shadow flex flex-col gap-4"
+        className="w-1/2 mx-auto p-4 rounded shadow flex flex-col gap-4 my-card"
       >
         <h1 className="text-2xl font-bold">Create New Project</h1>
 
@@ -111,7 +111,7 @@ export default function NewProjectPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-2 rounded btn btn-secondary"
+          className="w-full py-2 rounded btn btn-custom"
         >
           {loading ? 'Creating…' : 'Create Project'}
         </button>

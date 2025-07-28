@@ -4,9 +4,9 @@
 // - Wraps the entire application with AuthProvider for authentication context.
 // - Renders a site-wide Navbar and main content container.
 
-import "bootstrap/dist/css/bootstrap.css";
 import '@/styles/globals.css'
 import type { AppProps } from 'next/app'
+import { useEffect } from 'react'
 import { AuthProvider } from '@/context/AuthContext'
 import Navbar from '@/components/Navbar'
 
