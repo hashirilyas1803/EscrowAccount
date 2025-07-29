@@ -9,6 +9,7 @@ import Link from 'next/link'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import api from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
+import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
 
 // Interface definitions for type safety
 interface Project {
@@ -56,7 +57,7 @@ export default function BuyerDashboard() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
 
   // Form state for recording a new transaction
-  const [txUnit, setTxUnit] = useState<number | ''>('');
+  const [txUnit, setTxUnit] = useState<number>(0);
   const [txAmount, setTxAmount] = useState<string>('')
   const [txMethod, setTxMethod] = useState<'cash'|'bank transfer'>('bank transfer')
   const [txDate, setTxDate]     = useState<string>(new Date().toISOString().slice(0,16))
@@ -141,7 +142,7 @@ export default function BuyerDashboard() {
       )
       .map(u => ({
         id: u.id,
-        value: u.unit_id,
+        value: u.id,
         label: u.booked
           ? `${u.unit_id} — $${u.price} (Booked by you)`
           : `${u.unit_id} — $${u.price} (Available)`
@@ -210,6 +211,76 @@ export default function BuyerDashboard() {
   const unitIdToUnit = new Map(allUnits.map(u => [u.unit_id, u])) 
   const projectIdToName = new Map(projects.map(p => [p.id, p.name]))
 
+  const projectStats = useMemo(() => {
+    const stats = new Map<number, {
+      project_id: number
+      name: string
+      units_per_project: number
+      bookings_per_project: number
+      amount_per_project: number
+      unmatched_transactions_per_project: number
+    }>()
+
+    // Pre-index units by project
+    for (const unit of allUnits) {
+      if (!stats.has(unit.project_id)) {
+        stats.set(unit.project_id, {
+          project_id: unit.project_id,
+          name: projectIdToName.get(unit.project_id) || 'Unknown',
+          units_per_project: 0,
+          bookings_per_project: 0,
+          amount_per_project: 0,
+          unmatched_transactions_per_project: 0,
+        })
+      }
+      stats.get(unit.project_id)!.units_per_project += 1
+    }
+
+    // Count bookings
+    for (const booking of bookings) {
+      const unit = unitIdToUnit.get(booking.unit_number)
+      if (!unit) continue
+
+      const s = stats.get(unit.project_id)
+      if (!s) continue
+
+      s.bookings_per_project += 1
+      s.amount_per_project += booking.amount
+    }
+
+    // Unmatched transactions
+    for (const tx of transactions) {
+      if (tx.booking_id !== null) continue // matched
+
+      const unit = allUnits.find(u => u.id === tx.unit_id)
+      if (!unit) continue
+
+      const s = stats.get(unit.project_id)
+      if (!s) continue
+
+      s.unmatched_transactions_per_project += 1
+    }
+
+    return Array.from(stats.values())
+  }, [allUnits, bookings, transactions, projectIdToName, unitIdToUnit])
+
+  const COLORS = [
+    '#0088FE', '#00C49F', '#FFBB28', '#FF8042',
+    '#A28EF0', '#FF6666', '#66CC99', '#FF9933',
+    '#3399FF', '#FF66CC', '#99CC00', '#FFCC00',
+    '#66FFFF', '#9966FF', '#FF99CC', '#669999',
+    '#FFB347', '#B6D7A8', '#E06666', '#F6B26B'
+  ]
+
+  // Convert projectStats into pie chart datasets
+  const unitsData = projectStats.map(p => ({ name: p.name, value: p.units_per_project }))
+  const bookingsData = projectStats.map(p => ({ name: p.name, value: p.bookings_per_project }))
+  const amountData = projectStats.map(p => ({ name: p.name, value: p.amount_per_project }))
+  const unmatchedData = projectStats.map(p => ({ name: p.name, value: p.unmatched_transactions_per_project }))
+
+  const [selectedProject, setSelectedProject] = useState<string | null>(null)
+
+
 
   return (
     <ProtectedRoute roles={['buyer']}>
@@ -221,6 +292,11 @@ export default function BuyerDashboard() {
           <li className="nav-item" role="presentation">
             <button className="nav-link active" id="projects-tab" data-bs-toggle="tab" data-bs-target="#projects" type="button" role="tab" aria-controls="projects" aria-selected="false">
               Browse Projects
+            </button>
+          </li>
+          <li className="nav-item" role="presentation">
+            <button className="nav-link" id="stats-tab" data-bs-toggle="tab" data-bs-target="#stats" type="button" role="tab" aria-controls="stats" aria-selected="false">
+              Project Stats
             </button>
           </li>
           <li className="nav-item" role="presentation">
@@ -254,6 +330,72 @@ export default function BuyerDashboard() {
               </ul>
             )}
           </section>
+          <section className='tab-pane fade' id='stats'>
+            <h2 className="text-xl font-semibold mb-4">Project Stats</h2>
+
+            {projectStats.length === 0 ? (
+              <p>No project stats to show.</p>
+            ) : (
+              <>
+                {/* PIE CHARTS */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 mb-8">
+                  {[
+                    { title: 'Units per Project', data: unitsData },
+                    { title: 'Bookings per Project', data: bookingsData },
+                    { title: 'Total Amount per Project', data: amountData },
+                    { title: 'Unmatched Transactions', data: unmatchedData }
+                  ].map((chart, index) => (
+                    <div key={chart.title} className="p-4 rounded shadow my-card mt-4">
+                      <h3 className="text-md font-semibold mb-2">{chart.title}</h3>
+                      <ResponsiveContainer width="100%" height={200}>
+                        <PieChart>
+                          <Pie
+                            data={chart.data}
+                            dataKey="value"
+                            nameKey="name"
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={80}
+                            label
+                            onClick={(entry, i) => {
+                              setSelectedProject(prev =>
+                                prev === entry.name ? null : entry.name
+                              )
+                            }}
+                          >
+                            {chart.data.map((_, i) => (
+                              <Cell key={`cell-${i}`} fill={COLORS[i % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                          <Legend layout="horizontal" verticalAlign="bottom" align="center" />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  ))}
+                </div>
+
+                {/* FILTERED PROJECT CARDS */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                  {(selectedProject
+                    ? projectStats.filter(stat => stat.name === selectedProject)
+                    : projectStats
+                  ).map(stat => (
+                    <div key={stat.project_id} className="p-4 rounded shadow my-card space-y-2">
+                      <div className="text-lg font-bold">{stat.name}</div>
+                      <ul className="text-sm space-y-1">
+                        <li><strong>Units:</strong> {stat.units_per_project}</li>
+                        <li><strong>Bookings:</strong> {stat.bookings_per_project}</li>
+                        <li><strong>Total Amount:</strong> ${stat.amount_per_project.toFixed(2)}</li>
+                        <li><strong>Unmatched Transactions:</strong> {stat.unmatched_transactions_per_project}</li>
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </section>
+
           {/* Your Bookings section */}
           <section className='tab-pane fade' id='bookings'>
             <h2 className="text-xl font-semibold mb-4">Your Bookings</h2>
@@ -340,7 +482,7 @@ export default function BuyerDashboard() {
                     Select Unit…
                   </option>
                   {eligibleUnits.map(o => (
-                    <option key={o.value} value={o.id}>
+                    <option key={o.id} value={o.id}>
                       {o.label}
                     </option>
                   ))}
